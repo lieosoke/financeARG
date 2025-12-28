@@ -1,0 +1,18 @@
+{
+  "status": "commited",
+  "type": "frontend",
+  "scope": "codebase",
+  "localEndpoint": "http://localhost:5173/dashboard",
+  "loginUser": "owner@argtravel.com",
+  "loginPassword": "password123",
+  "executionArgs": {
+    "projectName": "finance-arg",
+    "projectPath": "d:\\xampp\\htdocs\\finance-arg",
+    "testIds": [],
+    "additionalInstruction": "",
+    "envs": {
+      "API_KEY": "sk-user-f6TvtBx7_3vYJpSk7jio-hIl8M5Jhsg8XJ_WVUeYnpHax77osPP8Zt4DL2RyzrCpCBZnywcQjvmeJEnJ8SyC9fDuxpnl_OcKQHnbMqGLyreOwY49GLXS9JSCIYApg5yws1g"
+    }
+  },
+  "proxy": "http://433bea6a-eef5-4747-927f-9eaaa39553bf:TF8IqBBZhEcRGjo9iovbSt59g5YmWnAR@tun.testsprite.com:8080"
+}

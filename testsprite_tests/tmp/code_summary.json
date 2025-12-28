@@ -1,0 +1,199 @@
+{
+    "tech_stack": [
+        "JavaScript",
+        "React 19",
+        "Vite",
+        "TailwindCSS",
+        "React Router",
+        "Zustand",
+        "React Query",
+        "Better Auth",
+        "Node.js",
+        "Express",
+        "PostgreSQL",
+        "Drizzle ORM",
+        "TypeScript (Backend)"
+    ],
+    "features": [
+        {
+            "name": "Authentication",
+            "description": "User authentication system with login and signup functionality using Better Auth",
+            "files": [
+                "src/pages/auth/Login.jsx",
+                "src/pages/auth/SignUp.jsx",
+                "src/hooks/useAuth.js",
+                "src/components/ProtectedRoute.jsx"
+            ]
+        },
+        {
+            "name": "Dashboard",
+            "description": "Main dashboard showing overview of financial metrics, statistics, and cash flow",
+            "files": [
+                "src/pages/dashboard/Dashboard.jsx",
+                "src/hooks/useDashboard.js",
+                "src/services/api/dashboard.js",
+                "src/components/molecules/MetricCard.jsx"
+            ]
+        },
+        {
+            "name": "Jamaah Management",
+            "description": "CRUD operations for managing pilgrims (jamaah) with personal details, payment tracking, and status",
+            "files": [
+                "src/pages/jamaah/JamaahList.jsx",
+                "src/pages/jamaah/JamaahForm.jsx",
+                "src/hooks/useJamaah.js",
+                "src/services/api/jamaah.js"
+            ]
+        },
+        {
+            "name": "Package Management",
+            "description": "Management of tour packages including manifest, room assignments, and seat control",
+            "files": [
+                "src/pages/paket/PaketList.jsx",
+                "src/pages/paket/PaketForm.jsx",
+                "src/pages/paket/ManifestPage.jsx",
+                "src/pages/paket/RoomListPage.jsx",
+                "src/pages/paket/RoomListIndex.jsx",
+                "src/pages/paket/SeatControl.jsx",
+                "src/hooks/usePackages.js",
+                "src/services/api/packages.js"
+            ]
+        },
+        {
+            "name": "Income Management",
+            "description": "Track and manage income transactions including down payments and full payments from jamaah",
+            "files": [
+                "src/pages/keuangan/PemasukanPage.jsx",
+                "src/components/modals/AddIncomeModal.jsx",
+                "src/hooks/useTransactions.js",
+                "src/services/api/transactions.js"
+            ]
+        },
+        {
+            "name": "Expense Management",
+            "description": "Record and track various expense transactions for the organization",
+            "files": [
+                "src/pages/keuangan/PengeluaranPage.jsx",
+                "src/components/modals/AddExpenseModal.jsx",
+                "src/hooks/useTransactions.js",
+                "src/services/api/transactions.js"
+            ]
+        },
+        {
+            "name": "Vendor Debt Management",
+            "description": "Manage vendor debts, track payments, and view debt details",
+            "files": [
+                "src/pages/keuangan/HutangVendor.jsx",
+                "src/components/modals/AddVendorDebtModal.jsx",
+                "src/components/modals/PayDebtModal.jsx",
+                "src/components/modals/VendorDebtDetailModal.jsx",
+                "src/hooks/useTransactions.js"
+            ]
+        },
+        {
+            "name": "Cash Flow",
+            "description": "View and analyze cash flow transactions with filtering and visualization",
+            "files": [
+                "src/pages/keuangan/CashflowPage.jsx",
+                "src/hooks/useTransactions.js",
+                "src/services/api/transactions.js"
+            ]
+        },
+        {
+            "name": "Vendor Management",
+            "description": "CRUD operations for managing vendors and suppliers",
+            "files": [
+                "src/pages/vendor/VendorManagement.jsx",
+                "src/hooks/useVendors.js",
+                "src/services/api/vendors.js"
+            ]
+        },
+        {
+            "name": "Invoice Generator",
+            "description": "Generate, print, and download invoices for jamaah with payment details",
+            "files": [
+                "src/pages/laporan/InvoiceGenerator.jsx",
+                "src/hooks/useJamaah.js"
+            ]
+        },
+        {
+            "name": "Financial Reports",
+            "description": "Generate profit/loss reports, budget vs actual analysis, and audit logs",
+            "files": [
+                "src/pages/laporan/LabaRugiPage.jsx",
+                "src/pages/laporan/BudgetActualPage.jsx",
+                "src/pages/laporan/AuditLogPage.jsx",
+                "src/hooks/useReports.js",
+                "src/services/api/reports.js"
+            ]
+        },
+        {
+            "name": "User Management",
+            "description": "Admin functionality to manage user accounts and roles",
+            "files": [
+                "src/pages/settings/UserManagement.jsx",
+                "src/hooks/useUsers.js",
+                "src/services/api/users.js"
+            ]
+        },
+        {
+            "name": "Role & Permission Management",
+            "description": "Configure user roles and permissions for access control",
+            "files": [
+                "src/pages/settings/RolePermission.jsx"
+            ]
+        },
+        {
+            "name": "Company Settings",
+            "description": "Configure company information and settings",
+            "files": [
+                "src/pages/settings/CompanySettings.jsx",
+                "src/hooks/useCompanySettings.js",
+                "src/services/api/companySettings.js"
+            ]
+        },
+        {
+            "name": "User Profile",
+            "description": "User profile page for viewing and updating personal information",
+            "files": [
+                "src/pages/profile/ProfilePage.jsx"
+            ]
+        },
+        {
+            "name": "Notifications",
+            "description": "System notifications and alerts for users",
+            "files": [
+                "src/pages/notifications/NotificationsPage.jsx",
+                "src/services/api/notifications.js"
+            ]
+        },
+        {
+            "name": "Navigation",
+            "description": "Application navigation with sidebar and top navbar",
+            "files": [
+                "src/components/organisms/Sidebar.jsx",
+                "src/components/organisms/TopNavbar.jsx",
+                "src/router.jsx"
+            ]
+        },
+        {
+            "name": "Search Functionality",
+            "description": "Global search modal for finding records across the application",
+            "files": [
+                "src/components/organisms/SearchModal.jsx",
+                "src/hooks/useSearch.js"
+            ]
+        },
+        {
+            "name": "UI Components",
+            "description": "Reusable UI components including buttons, inputs, cards, modals, and badges",
+            "files": [
+                "src/components/atoms/Button.jsx",
+                "src/components/atoms/Input.jsx",
+                "src/components/atoms/Badge.jsx",
+                "src/components/molecules/Card.jsx",
+                "src/components/molecules/Modal.jsx"
+            ]
+        }
+    ]
+}

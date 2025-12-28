@@ -1,0 +1,564 @@
+[
+  {
+    "id": "TC001",
+    "title": "Successful login with valid credentials",
+    "description": "Verify that a user can log in successfully using valid username and password corresponding to a registered user with appropriate role.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to the login page."
+      },
+      {
+        "type": "action",
+        "description": "Enter valid username/email and password."
+      },
+      {
+        "type": "action",
+        "description": "Click the login button."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify user is redirected to the dashboard."
+      },
+      {
+        "type": "assertion",
+        "description": "Check that authentication token is set and session is active."
+      }
+    ]
+  },
+  {
+    "id": "TC002",
+    "title": "Login failure with incorrect credentials",
+    "description": "Verify that login fails and an error message is shown when user enters invalid username or password.",
+    "category": "error handling",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to the login page."
+      },
+      {
+        "type": "action",
+        "description": "Enter invalid username/email or password."
+      },
+      {
+        "type": "action",
+        "description": "Click the login button."
+      },
+      {
+        "type": "assertion",
+        "description": "Check that login is denied."
+      },
+      {
+        "type": "assertion",
+        "description": "Ensure appropriate error message is displayed."
+      }
+    ]
+  },
+  {
+    "id": "TC003",
+    "title": "Role-based access control enforcement",
+    "description": "Verify users with different roles can access only authorized features and endpoints according to role permissions.",
+    "category": "security",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Log in as a user with limited permissions (e.g. finance role)."
+      },
+      {
+        "type": "action",
+        "description": "Attempt to access admin-only pages such as Package Management or Company Settings."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify access is denied and redirection or error is shown."
+      },
+      {
+        "type": "action",
+        "description": "Access pages and API endpoints allowed for the current role."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify data and UI components render correctly without errors."
+      }
+    ]
+  },
+  {
+    "id": "TC004",
+    "title": "Jamaah registration with valid data",
+    "description": "Verify the complete jamaah (pilgrim) registration flow including form validation, package assignment, and payment status initialization with valid inputs.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to Jamaah registration form."
+      },
+      {
+        "type": "action",
+        "description": "Fill in all required personal details with valid values."
+      },
+      {
+        "type": "action",
+        "description": "Select a travel package with available seats."
+      },
+      {
+        "type": "action",
+        "description": "Upload required documents."
+      },
+      {
+        "type": "action",
+        "description": "Submit the registration form."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify that jamaah is successfully created in the system."
+      },
+      {
+        "type": "assertion",
+        "description": "Check package seat count is decremented accordingly."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm payment status is initialized correctly."
+      }
+    ]
+  },
+  {
+    "id": "TC005",
+    "title": "Jamaah registration form validation error handling",
+    "description": "Verify the registration form performs frontend and backend validation and displays appropriate error messages when invalid or incomplete data is submitted.",
+    "category": "error handling",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to Jamaah registration form."
+      },
+      {
+        "type": "action",
+        "description": "Leave required fields empty or enter invalid formats (e.g. wrong email or NPWP format)."
+      },
+      {
+        "type": "action",
+        "description": "Submit the registration form."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify that frontend validations trigger and prevent submission."
+      },
+      {
+        "type": "action",
+        "description": "Force submitting invalid data via backend API if possible."
+      },
+      {
+        "type": "assertion",
+        "description": "Ensure backend validation rejects data with error messages."
+      }
+    ]
+  },
+  {
+    "id": "TC006",
+    "title": "Package management CRUD operations",
+    "description": "Verify Admin or Owner can create, read, update, and delete travel packages with correct data validation and seat/room management.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to Package Management page."
+      },
+      {
+        "type": "action",
+        "description": "Create a new package with valid details including unique package code, pricing, capacity, and schedule."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm package is stored and listed."
+      },
+      {
+        "type": "action",
+        "description": "Edit the package with updated pricing or schedule."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify updates are saved and reflected."
+      },
+      {
+        "type": "action",
+        "description": "Delete an existing package without associated active jamaah entries."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm package is removed from the list."
+      },
+      {
+        "type": "action",
+        "description": "Try to create package with duplicated code."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify that validation error is raised preventing duplicate."
+      }
+    ]
+  },
+  {
+    "id": "TC007",
+    "title": "Income transaction recording and status update",
+    "description": "Verify that finance role users can record income transactions (DP, installments, pelunasan) for jamaah and that payment status updates correctly and dashboard metrics refresh.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to Income Management page."
+      },
+      {
+        "type": "action",
+        "description": "Add a new income transaction specifying jamaah, payment type, amount, payment method, and date."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify transaction is saved and visible in list."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm jamaah payment status updates accordingly."
+      },
+      {
+        "type": "assertion",
+        "description": "Check that dashboard financial metrics reflect the new transaction."
+      }
+    ]
+  },
+  {
+    "id": "TC008",
+    "title": "Expense transaction recording with category validation",
+    "description": "Verify finance role users can add expense records with proper categorization and validate amounts and required fields.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to Expense Management page."
+      },
+      {
+        "type": "action",
+        "description": "Add a new expense with valid category, amount, date, and bank details."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm expense is recorded and listed correctly."
+      },
+      {
+        "type": "action",
+        "description": "Attempt to add expense without required fields or invalid amounts."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify validation messages prevent incomplete or invalid submissions."
+      }
+    ]
+  },
+  {
+    "id": "TC009",
+    "title": "Vendor debt creation and payment recording",
+    "description": "Verify that finance users can create vendor debts, record debt payments, and that payment history and status are updated accordingly.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to Vendor Debt Management page."
+      },
+      {
+        "type": "action",
+        "description": "Create a new vendor debt with vendor selection, debt amount, due date, and category."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify debt record is created and listed."
+      },
+      {
+        "type": "action",
+        "description": "Record a partial payment towards the vendor debt."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm payment is tracked in payment history."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify debt status updates (e.g., partial, fully paid) correctly."
+      }
+    ]
+  },
+  {
+    "id": "TC010",
+    "title": "Comprehensive financial report generation and export",
+    "description": "Verify users can generate financial reports (profit & loss, budget vs actual, invoices, audit logs) with filter options and export functionality.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to the reports section."
+      },
+      {
+        "type": "action",
+        "description": "Select report type and apply various filter criteria (date ranges, categories, vendors, jamaah)."
+      },
+      {
+        "type": "action",
+        "description": "Generate the report and view it in the UI."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify that the report data matches the filters and is accurate based on transactions."
+      },
+      {
+        "type": "action",
+        "description": "Export the report to common formats (PDF, Excel)."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm the exported file is generated correctly and includes all report data."
+      }
+    ]
+  },
+  {
+    "id": "TC011",
+    "title": "User profile viewing and editing",
+    "description": "Verify users can view and edit their profile information and that changes are updated correctly after validation.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to user profile page."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify existing user data is displayed."
+      },
+      {
+        "type": "action",
+        "description": "Edit fields such as name, email, and contact information."
+      },
+      {
+        "type": "action",
+        "description": "Submit the form."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm profile updates are saved and displayed."
+      },
+      {
+        "type": "action",
+        "description": "Attempt invalid inputs and verify validation prevents submissions."
+      }
+    ]
+  },
+  {
+    "id": "TC012",
+    "title": "Company settings configuration and validation",
+    "description": "Verify authorized users can update company information and configurations with validation and settings persistence.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to the Company Settings page."
+      },
+      {
+        "type": "action",
+        "description": "Update fields such as company name, NPWP tax ID, address, and currency settings."
+      },
+      {
+        "type": "action",
+        "description": "Submit the changes."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify that changes are saved correctly and reload with updated data."
+      },
+      {
+        "type": "action",
+        "description": "Enter invalid formats (e.g., incorrect NPWP) and check validation prevents saving."
+      }
+    ]
+  },
+  {
+    "id": "TC013",
+    "title": "Dashboard displays real-time financial and operational metrics",
+    "description": "Verify that the dashboard page correctly loads and displays updated financial data, charts, and key statistics in accordance with backend data.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Log in as authorized user and navigate to the dashboard."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify summary financial metrics are displayed accurately."
+      },
+      {
+        "type": "assertion",
+        "description": "Check that charts (cash flow, income vs expense) load correctly with proper labels."
+      },
+      {
+        "type": "assertion",
+        "description": "Simulate new financial transactions and verify dashboard updates in real-time."
+      }
+    ]
+  },
+  {
+    "id": "TC014",
+    "title": "Notifications delivery and display",
+    "description": "Verify that payment reminders and system alerts are generated, sent to users, and displayed correctly in the notifications interface.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Trigger payment reminder notifications by setting a jamaah payment nearing due date."
+      },
+      {
+        "type": "action",
+        "description": "Log in as the target user and navigate to notifications page."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify notification is listed with correct content and timestamp."
+      },
+      {
+        "type": "action",
+        "description": "Click notification to acknowledge or navigate to relevant section."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm notification behaves as expected."
+      }
+    ]
+  },
+  {
+    "id": "TC015",
+    "title": "Global search functionality accuracy",
+    "description": "Verify that the global search feature can perform queries across multiple entities like jamaah, packages, vendors and returns relevant results quickly.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Open the global search modal."
+      },
+      {
+        "type": "action",
+        "description": "Enter partial and full search terms that match different entities."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify search results include matching jamaah, packages, vendors, etc."
+      },
+      {
+        "type": "assertion",
+        "description": "Check relevance order and result accuracy."
+      },
+      {
+        "type": "action",
+        "description": "Perform empty or invalid searches and verify no errors occur and no irrelevant data is shown."
+      }
+    ]
+  },
+  {
+    "id": "TC016",
+    "title": "Security test: session management and token encryption",
+    "description": "Verify that sessions and authentication tokens are securely managed using encryption and expire appropriately, protecting against unauthorized access.",
+    "category": "security",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Log in with valid user and capture authentication token."
+      },
+      {
+        "type": "assertion",
+        "description": "Ensure token is encrypted and stored securely in browser storage."
+      },
+      {
+        "type": "action",
+        "description": "Attempt to access protected API endpoints with invalid or expired tokens."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify access is denied with authorization error."
+      },
+      {
+        "type": "action",
+        "description": "Simulate session timeout and verify user is logged out and redirected to login page."
+      }
+    ]
+  },
+  {
+    "id": "TC017",
+    "title": "Data validation compliance with Indonesian financial standards",
+    "description": "Verify that data such as currency formatting (Indonesian Rupiah) and tax ID (NPWP) adhere to local standards and that invalid data is rejected.",
+    "category": "error handling",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Enter financial transactions with currency in formats other than Rupiah."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify validation rejects incorrect currency formats and prompts correct input."
+      },
+      {
+        "type": "action",
+        "description": "Input NPWP tax IDs with invalid structure during vendor or company settings."
+      },
+      {
+        "type": "assertion",
+        "description": "Ensure backend and frontend validation catches invalid NPWP format and prevents submission."
+      }
+    ]
+  },
+  {
+    "id": "TC018",
+    "title": "API endpoint security and role-based access enforcement",
+    "description": "Validate that all API endpoints enforce authentication and authorization strictly according to user roles, preventing data leakage or unauthorized modifications.",
+    "category": "security",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Attempt to call protected API endpoints without authentication token."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the API rejects the request with 401 Unauthorized."
+      },
+      {
+        "type": "action",
+        "description": "Call API endpoints with tokens belonging to users with insufficient permissions."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify access is forbidden (403) for operations not allowed by the role."
+      },
+      {
+        "type": "action",
+        "description": "Perform normal API calls as authorized user."
+      },
+      {
+        "type": "assertion",
+        "description": "Ensure requests succeed and return expected data."
+      }
+    ]
+  }
+]
