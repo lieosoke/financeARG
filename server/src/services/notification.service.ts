@@ -1,5 +1,5 @@
 import { db } from '../config/database';
-import { notifications, NewNotification, Notification } from '../db/schema';
+import { notifications, users, NewNotification, Notification } from '../db/schema';
 import { eq, desc, and, sql, count } from 'drizzle-orm';
 
 interface NotificationFilters {
@@ -11,7 +11,28 @@ interface Pagination {
     limit: number;
 }
 
+// Helper type for creating notification for all users (id is generated, userId is set per user)
+type NotificationData = Omit<NewNotification, 'userId' | 'id'>;
+
 export const notificationService = {
+    /**
+     * Create notification for all users (broadcast)
+     */
+    async createForAllUsers(data: NotificationData) {
+        const allUsers = await db.select({ id: users.id }).from(users);
+
+        const notificationsToInsert = allUsers.map(user => ({
+            ...data,
+            id: crypto.randomUUID(),
+            userId: user.id,
+        }));
+
+        if (notificationsToInsert.length > 0) {
+            await db.insert(notifications).values(notificationsToInsert);
+        }
+
+        return notificationsToInsert.length;
+    },
     /**
      * Get all notifications for a user
      */

@@ -45,10 +45,10 @@ const ProfilePage = () => {
             const { currentPassword, newPassword, confirmPassword, ...profileData } = formData;
             const response = await usersApi.update(user.id, profileData);
 
-            if (response.data.success) {
+            if (response.success) {
                 setMessage({ type: 'success', text: 'Profil berhasil diperbarui' });
                 // Optional: Update global auth context user if needed
-                // setUser(response.data.data); 
+                // refetch session to update user data
             }
         } catch (error) {
             console.error('Update profile error:', error);
@@ -83,7 +83,7 @@ const ProfilePage = () => {
                 newPassword: formData.newPassword
             });
 
-            if (response.data.success) {
+            if (response.success) {
                 setMessage({ type: 'success', text: 'Password berhasil diubah' });
                 setFormData(prev => ({
                     ...prev,

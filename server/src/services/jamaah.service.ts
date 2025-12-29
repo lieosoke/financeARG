@@ -2,6 +2,7 @@ import { db } from '../config/database';
 import { jamaah, packages, transactions, NewJamaah, Jamaah } from '../db/schema';
 import { eq, desc, and, sql, count, sum, ne, or } from 'drizzle-orm';
 import { auditService } from './audit.service';
+import { notificationService } from './notification.service';
 
 interface JamaahFilters {
     packageId?: string;
@@ -207,6 +208,29 @@ export const jamaahService = {
             entityName: newJamaah.name,
             newValues: newJamaah,
         });
+
+        // Check seat availability and create warning notification if low
+        if (data.packageId) {
+            const [pkg] = await db.select().from(packages).where(eq(packages.id, data.packageId));
+            if (pkg) {
+                const availableSeats = pkg.totalSeats - (pkg.bookedSeats || 0);
+                if (availableSeats <= 5 && availableSeats > 0) {
+                    await notificationService.createForAllUsers({
+                        title: 'Seat Paket Menipis',
+                        message: `Paket ${pkg.name} tinggal ${availableSeats} seat tersedia`,
+                        type: 'warning',
+                        link: '/seat',
+                    });
+                } else if (availableSeats === 0) {
+                    await notificationService.createForAllUsers({
+                        title: 'Paket Penuh',
+                        message: `Paket ${pkg.name} sudah tidak memiliki seat tersedia`,
+                        type: 'error',
+                        link: '/seat',
+                    });
+                }
+            }
+        }
 
         return newJamaah;
     },

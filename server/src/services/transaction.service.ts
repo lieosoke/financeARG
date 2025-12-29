@@ -10,6 +10,7 @@ import {
 } from '../db/schema';
 import { eq, desc, and, sql, count, sum, gte, lte } from 'drizzle-orm';
 import { auditService } from './audit.service';
+import { notificationService } from './notification.service';
 
 interface TransactionFilters {
     type?: 'pemasukan' | 'pengeluaran';
@@ -179,6 +180,21 @@ export const transactionService = {
             newValues: newTransaction,
         });
 
+        // Create notification for income
+        const jamaahInfo = data.jamaahId
+            ? await db.select().from(jamaah).where(eq(jamaah.id, data.jamaahId)).then(r => r[0])
+            : null;
+        const formattedAmount = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(parseFloat(data.amount));
+
+        await notificationService.createForAllUsers({
+            title: 'Pembayaran Masuk',
+            message: jamaahInfo
+                ? `Pembayaran ${formattedAmount} dari ${jamaahInfo.name}`
+                : `Pemasukan ${formattedAmount} telah dicatat`,
+            type: 'success',
+            link: '/keuangan/pemasukan',
+        });
+
         return newTransaction;
     },
 
@@ -220,6 +236,16 @@ export const transactionService = {
             entityId: newTransaction.id,
             entityName: `Pengeluaran: ${data.amount}`,
             newValues: newTransaction,
+        });
+
+        // Create notification for expense
+        const formattedAmount = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(parseFloat(data.amount));
+
+        await notificationService.createForAllUsers({
+            title: 'Pengeluaran Tercatat',
+            message: `Pengeluaran ${formattedAmount} - ${data.description || 'Tidak ada deskripsi'}`,
+            type: 'info',
+            link: '/keuangan/pengeluaran',
         });
 
         return newTransaction;

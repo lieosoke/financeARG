@@ -1,9 +1,12 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Menu, Bell, Moon, Sun, LogOut, User, Settings, Search, Command } from 'lucide-react';
+import { Menu, Bell, Moon, Sun, LogOut, User, Settings, Search, Command, Loader2 } from 'lucide-react';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useNotifications, useMarkNotificationAsRead } from '../../hooks';
 import SearchModal from './SearchModal';
+import { formatDistanceToNow } from 'date-fns';
+import { id as idLocale } from 'date-fns/locale';
 
 
 const TopNavbar = ({ onMenuClick, pageTitle }) => {
@@ -63,20 +66,31 @@ const TopNavbar = ({ onMenuClick, pageTitle }) => {
         navigate('/login');
     };
 
+    // Fetch real notifications
+    const { data: notificationsData, isLoading: notifLoading } = useNotifications({ limit: 5 });
+    const markAsReadMutation = useMarkNotificationAsRead();
 
-    const notifications = [
-        { id: 1, message: 'Pembayaran DP dari Ahmad Ali', time: '5 menit lalu', type: 'success' },
-        { id: 2, message: 'Seat paket UMR-01 tinggal 5 kursi', time: '1 jam lalu', type: 'warning' },
-        { id: 3, message: 'Invoice #INV-2024-001 telah dibayar', time: '2 jam lalu', type: 'info' },
-    ];
+    const notifications = notificationsData?.data || [];
+    const unreadCount = notificationsData?.unreadCount || 0;
 
     const getNotifDot = (type) => {
         const colors = {
             success: 'bg-emerald-500',
             warning: 'bg-amber-500',
             info: 'bg-blue-500',
+            error: 'bg-rose-500',
         };
         return colors[type] || 'bg-gray-500';
+    };
+
+    const handleNotificationClick = (notif) => {
+        if (!notif.isRead) {
+            markAsReadMutation.mutate(notif.id);
+        }
+        if (notif.link) {
+            navigate(notif.link);
+            setShowNotifications(false);
+        }
     };
 
     return (
@@ -125,7 +139,9 @@ const TopNavbar = ({ onMenuClick, pageTitle }) => {
                                 className="p-2.5 rounded-xl text-gray-400 hover:text-white hover:bg-surface-glass transition-colors relative"
                             >
                                 <Bell className="w-5 h-5" />
-                                <span className="absolute top-2 right-2 w-2 h-2 bg-primary-500 rounded-full shadow-glow-emerald-sm animate-pulse"></span>
+                                {unreadCount > 0 && (
+                                    <span className="absolute top-2 right-2 w-2 h-2 bg-primary-500 rounded-full shadow-glow-emerald-sm animate-pulse"></span>
+                                )}
                             </button>
 
                             {showNotifications && (
@@ -133,22 +149,41 @@ const TopNavbar = ({ onMenuClick, pageTitle }) => {
                                     <div className="p-4 border-b border-surface-border">
                                         <div className="flex items-center justify-between">
                                             <h3 className="font-semibold text-white">Notifikasi</h3>
-                                            <span className="text-xs text-primary-400 font-medium">3 baru</span>
+                                            {unreadCount > 0 && (
+                                                <span className="text-xs text-primary-400 font-medium">{unreadCount} baru</span>
+                                            )}
                                         </div>
                                     </div>
                                     <div className="max-h-80 overflow-y-auto scrollbar-thin">
-                                        {notifications.map((notif) => (
-                                            <div
-                                                key={notif.id}
-                                                className="p-4 border-b border-surface-border hover:bg-surface-glass cursor-pointer transition-colors flex items-start gap-3"
-                                            >
-                                                <div className={`w-2 h-2 rounded-full mt-2 ${getNotifDot(notif.type)}`}></div>
-                                                <div className="flex-1 min-w-0">
-                                                    <p className="text-sm text-gray-200">{notif.message}</p>
-                                                    <p className="text-xs text-gray-500 mt-1">{notif.time}</p>
-                                                </div>
+                                        {notifLoading ? (
+                                            <div className="p-8 flex items-center justify-center">
+                                                <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
                                             </div>
-                                        ))}
+                                        ) : notifications.length === 0 ? (
+                                            <div className="p-8 text-center">
+                                                <Bell className="w-8 h-8 text-gray-600 mx-auto mb-2" />
+                                                <p className="text-sm text-gray-500">Tidak ada notifikasi</p>
+                                            </div>
+                                        ) : (
+                                            notifications.map((notif) => (
+                                                <div
+                                                    key={notif.id}
+                                                    className={`p-4 border-b border-surface-border hover:bg-surface-glass cursor-pointer transition-colors flex items-start gap-3 ${!notif.isRead ? 'bg-primary-500/5' : ''}`}
+                                                    onClick={() => handleNotificationClick(notif)}
+                                                >
+                                                    <div className={`w-2 h-2 rounded-full mt-2 ${getNotifDot(notif.type)} ${!notif.isRead ? 'animate-pulse' : ''}`}></div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className={`text-sm ${!notif.isRead ? 'text-white font-medium' : 'text-gray-200'}`}>{notif.title || notif.message}</p>
+                                                        {notif.message && notif.title && (
+                                                            <p className="text-xs text-gray-400 mt-0.5 truncate">{notif.message}</p>
+                                                        )}
+                                                        <p className="text-xs text-gray-500 mt-1">
+                                                            {formatDistanceToNow(new Date(notif.createdAt), { addSuffix: true, locale: idLocale })}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            ))
+                                        )}
                                     </div>
                                     <div className="p-3 border-t border-surface-border text-center">
                                         <button
@@ -172,9 +207,9 @@ const TopNavbar = ({ onMenuClick, pageTitle }) => {
                                 className="flex items-center gap-3 p-1.5 pr-3 rounded-xl hover:bg-surface-glass transition-colors"
                             >
                                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center text-white font-semibold text-sm shadow-glow-emerald-sm">
-                                    AD
+                                    {user?.name ? user.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'US'}
                                 </div>
-                                <span className="hidden md:block text-sm font-medium text-gray-300">Admin</span>
+                                <span className="hidden md:block text-sm font-medium text-gray-300">{user?.name || 'User'}</span>
                             </button>
 
                             {showUserMenu && (

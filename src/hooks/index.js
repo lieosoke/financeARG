@@ -88,3 +88,10 @@ export {
     companySettingsKeys,
 } from './useCompanySettings';
 
+// Notifications
+export {
+    useNotifications,
+    useMarkNotificationAsRead,
+    useMarkAllNotificationsAsRead,
+    useDeleteNotification,
+} from './useNotifications';

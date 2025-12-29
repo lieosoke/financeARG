@@ -2,6 +2,7 @@ import { db } from '../config/database';
 import { vendors, vendorDebts, NewVendor, Vendor, NewVendorDebt, VendorDebt } from '../db/schema';
 import { eq, desc, and, sql, count, sum } from 'drizzle-orm';
 import { auditService } from './audit.service';
+import { notificationService } from './notification.service';
 
 interface VendorFilters {
     type?: string;
@@ -249,6 +250,17 @@ export const vendorDebtService = {
             newValues: newDebt,
         });
 
+        // Create notification for new vendor debt
+        const vendorInfo = await db.select().from(vendors).where(eq(vendors.id, data.vendorId)).then(r => r[0]);
+        const formattedAmount = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(parseFloat(data.totalAmount));
+
+        await notificationService.createForAllUsers({
+            title: 'Hutang Vendor Baru',
+            message: `Hutang ${formattedAmount} ke ${vendorInfo?.name || 'vendor'} telah dicatat`,
+            type: 'warning',
+            link: '/keuangan/hutang',
+        });
+
         return newDebt;
     },
 
@@ -336,6 +348,26 @@ export const vendorDebtService = {
             oldValues: existing,
             newValues: updated,
         });
+
+        // Create notification for vendor debt payment
+        const vendorInfo = await db.select().from(vendors).where(eq(vendors.id, existing.vendorId)).then(r => r[0]);
+        const formattedAmount = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(amount);
+
+        if (status === 'paid') {
+            await notificationService.createForAllUsers({
+                title: 'Hutang Vendor Lunas',
+                message: `Hutang ke ${vendorInfo?.name || 'vendor'} telah lunas`,
+                type: 'success',
+                link: '/keuangan/hutang',
+            });
+        } else {
+            await notificationService.createForAllUsers({
+                title: 'Pembayaran Hutang Vendor',
+                message: `Pembayaran ${formattedAmount} ke ${vendorInfo?.name || 'vendor'}`,
+                type: 'info',
+                link: '/keuangan/hutang',
+            });
+        }
 
         return updated;
     },
