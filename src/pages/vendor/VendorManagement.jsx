@@ -57,19 +57,23 @@ const VendorManagement = () => {
 
     const vendorTypes = [
         { value: 'all', label: 'Semua' },
-        { value: 'airlines', label: 'Maskapai' },
+        { value: 'airlines', label: 'Tiket Pesawat' },
         { value: 'hotel', label: 'Hotel' },
         { value: 'transport', label: 'Transport' },
-        { value: 'catering', label: 'Katering' },
+        { value: 'visa', label: 'Visa' },
+        { value: 'handling', label: 'Handling' },
+        { value: 'catering', label: 'Konsumsi' },
         { value: 'other', label: 'Lainnya' },
     ];
 
     const getTypeBadge = (type) => {
         const config = {
-            airlines: { variant: 'info', label: 'Maskapai' },
+            airlines: { variant: 'info', label: 'Tiket Pesawat' },
             hotel: { variant: 'primary', label: 'Hotel' },
             transport: { variant: 'warning', label: 'Transport' },
-            catering: { variant: 'success', label: 'Katering' },
+            visa: { variant: 'neutral', label: 'Visa' },
+            handling: { variant: 'success', label: 'Handling' },
+            catering: { variant: 'success', label: 'Konsumsi' },
             other: { variant: 'neutral', label: 'Lainnya' },
         };
         const t = config[type] || { variant: 'neutral', label: type || 'Lainnya' };
@@ -379,10 +383,12 @@ const VendorFormModal = ({ isOpen, onClose, onSubmit, isLoading, vendor }) => {
                             className="w-full px-4 py-3 rounded-xl bg-dark-tertiary/50 border border-surface-border text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 transition-all duration-200 appearance-none"
                             {...register('type', { required: 'Tipe wajib dipilih' })}
                         >
-                            <option value="airlines">Maskapai</option>
+                            <option value="airlines">Tiket Pesawat</option>
                             <option value="hotel">Hotel</option>
                             <option value="transport">Transport</option>
-                            <option value="catering">Katering</option>
+                            <option value="visa">Visa</option>
+                            <option value="handling">Handling</option>
+                            <option value="catering">Konsumsi</option>
                             <option value="other">Lainnya</option>
                         </select>
                     </div>
@@ -439,7 +445,7 @@ const VendorFormModal = ({ isOpen, onClose, onSubmit, isLoading, vendor }) => {
                     </Button>
                 </div>
             </form>
-        </Modal>
+        </Modal >
     );
 };
 

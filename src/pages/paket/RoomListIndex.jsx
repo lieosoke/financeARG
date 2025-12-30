@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Plane, ChevronDown } from 'lucide-react';
+import { Plane, ChevronDown, Printer } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Card from '../../components/molecules/Card';
 import RoomListPage from './RoomListPage';
@@ -33,9 +33,11 @@ const RoomListIndex = () => {
 
     return (
         <div className="space-y-6 animate-fade-in">
-            <div className="page-header px-6 pt-6">
-                <h1 className="page-title">Room List</h1>
-                <p className="text-sm text-gray-500 mt-1">Kelola pembagian kamar jamaah per paket</p>
+            <div className="flex items-center justify-between page-header px-6 pt-6 print:hidden">
+                <div>
+                    <h1 className="page-title">Room List</h1>
+                    <p className="text-sm text-gray-500 mt-1">Kelola pembagian kamar jamaah per paket</p>
+                </div>
             </div>
 
             <div className="px-6">

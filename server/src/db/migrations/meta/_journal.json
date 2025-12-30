@@ -43,6 +43,13 @@
       "when": 1766982037190,
       "tag": "0005_lyrical_stellaris",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1767077738391,
+      "tag": "0006_pale_squadron_supreme",
+      "breakpoints": true
     }
   ]
 }

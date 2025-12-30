@@ -44,8 +44,9 @@ const InvoiceGenerator = () => {
     const [searchQuery, setSearchJamaahQuery] = useState('');
     const [selectedJamaahId, setSelectedJamaahId] = useState(null);
     const [paymentMethod, setPaymentMethod] = useState('cash'); // Default payment method for Quick Invoice
-    const [receiverName, setReceiverName] = useState('');
-    const [senderName, setSenderName] = useState(user?.name || '');
+    // SWAPPED DEFAULTS: Receiver = User, Sender = Jamaah (set later or empty)
+    const [receiverName, setReceiverName] = useState(user?.name || '');
+    const [senderName, setSenderName] = useState('');
     const [showPrintView, setShowPrintView] = useState(false);
 
     // Batch Print State
@@ -188,7 +189,10 @@ const InvoiceGenerator = () => {
         // If clicking on already selected item in list (not checkbox), just view it
         if (selectedJamaahId === jamaah.id) return;
         setSelectedJamaahId(jamaah.id);
-        setReceiverName(jamaah.nama);
+
+        // Auto-set sender to Jamaah's name when selected
+        // Receiver remains as the logged-in user (default) or whatever was manually typed
+        setSenderName(jamaah.nama);
     };
 
     // -- BATCH SELECTION LOGIC --
@@ -254,7 +258,9 @@ const InvoiceGenerator = () => {
                     return {
                         jamaah: prepareJamaahForPrint(jamaahRaw),
                         payments,
-                        totalDiscount
+                        totalDiscount,
+                        sender: jamaahRaw.name, // Default Sender = Jamaah
+                        receiver: user?.name || ''  // Default Receiver = User
                     };
                 });
 
@@ -294,7 +300,9 @@ const InvoiceGenerator = () => {
         setBatchInvoices([{
             jamaah: selectedJamaah,
             payments: singleJamaahPayments,
-            totalDiscount: singleJamaahTotalDiscount
+            totalDiscount: singleJamaahTotalDiscount,
+            sender: senderName, // Use state value (editable)
+            receiver: receiverName // Use state value (editable)
         }]);
 
         setShowPrintView(true);
@@ -313,7 +321,7 @@ const InvoiceGenerator = () => {
             p.tanggal,
             p.jenis,
             p.amount,
-            paymentMethodLabels[p.paymentMethod] || p.paymentMethod,
+            p.paymentMethod,
             p.notes || ''
         ]);
         const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
@@ -527,11 +535,11 @@ const InvoiceGenerator = () => {
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '20px', fontSize: '10px' }}>
                                 <div style={{ textAlign: 'center', width: '30%' }}>
                                     <p style={{ marginBottom: '60px' }}>{COMPANY_INFO.city}, {invoiceDate}<br />Yang Menyerahkan</p>
-                                    <p style={{ fontWeight: 'bold' }}>{user?.name || '(....................)'}</p>
+                                    <p style={{ fontWeight: 'bold' }}>{invoiceData.sender || '(....................)'}</p>
                                 </div>
                                 <div style={{ textAlign: 'center', width: '30%' }}>
                                     <p style={{ marginBottom: '60px' }}>&nbsp;<br />Yang Menerima</p>
-                                    <p style={{ fontWeight: 'bold' }}>{invoiceData.jamaah.nama || '(....................)'}</p>
+                                    <p style={{ fontWeight: 'bold' }}>{invoiceData.receiver || '(....................)'}</p>
                                 </div>
                             </div>
                         </div>

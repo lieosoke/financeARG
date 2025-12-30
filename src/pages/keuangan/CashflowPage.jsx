@@ -26,12 +26,12 @@ const CashflowPage = () => {
 
     // Extract data with fallbacks
     const chartData = cashflowData?.data || [];
-    const totals = totalsData?.data || { totalIncome: 0, totalExpense: 0 };
+    const totals = totalsData?.data || { pemasukan: 0, pengeluaran: 0 };
     const recentTransactions = recentData?.data || [];
 
     // Calculate metrics
-    const totalPemasukan = parseFloat(totals.totalIncome) || 0;
-    const totalPengeluaran = parseFloat(totals.totalExpense) || 0;
+    const totalPemasukan = parseFloat(totals.pemasukan) || 0;
+    const totalPengeluaran = parseFloat(totals.pengeluaran) || 0;
     const saldo = totalPemasukan - totalPengeluaran;
     const growthRate = totalPemasukan > 0 ? ((saldo / totalPemasukan) * 100).toFixed(1) : 0;
 
@@ -222,7 +222,7 @@ const CashflowPage = () => {
                 title="Transaksi Terbaru"
                 subtitle="5 transaksi terakhir"
                 headerAction={
-                    <Button variant="ghost" size="sm">Lihat Semua</Button>
+                    <Button variant="ghost" size="sm" onClick={() => window.location.href = '/keuangan/pemasukan'}>Lihat Semua</Button>
                 }
             >
                 {recentLoading ? (

@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Plus, Trash2, Save, User, Bed, Search, CheckSquare, Square, LogOut, ArrowRight, X } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Save, User, Bed, Search, CheckSquare, Square, LogOut, ArrowRight, X, Printer, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Card from '../../components/molecules/Card';
 import Button from '../../components/atoms/Button';
@@ -198,11 +198,71 @@ const RoomListPage = ({ packageIdOverride }) => {
         return <Badge variant={c.color}>{c.label}</Badge>;
     };
 
+    // Print handler
+    const handlePrint = () => {
+        window.print();
+    };
+
+    // Export CSV handler
+    const handleExportCSV = () => {
+        if (!rooms.length && unassigned.length === 0) {
+            toast.error('Tidak ada data untuk diexport');
+            return;
+        }
+
+        const headers = ['No', 'Nomor Kamar', 'Tipe Kamar', 'Nama Jamaah', 'Jenis Kelamin', 'Paket'];
+        const csvRows = [headers.join(',')];
+
+        // Process assigned rooms
+        let index = 1;
+        rooms.forEach(room => {
+            room.jamaah.forEach(j => {
+                const row = [
+                    index++,
+                    `"${room.roomNumber}"`,
+                    `"${room.roomType}"`,
+                    `"${j.name}"`,
+                    `"${j.gender === 'male' ? 'Laki-laki' : 'Perempuan'}"`,
+                    `"${packet?.name || ''}"`
+                ];
+                csvRows.push(row.join(','));
+            });
+        });
+
+        // Process unassigned
+        unassigned.forEach(j => {
+            const row = [
+                index++,
+                '"Belum Assign"',
+                '"-"',
+                `"${j.name}"`,
+                `"${j.gender === 'male' ? 'Laki-laki' : 'Perempuan'}"`,
+                `"${packet?.name || ''}"`
+            ];
+            csvRows.push(row.join(','));
+        });
+
+        const csvString = csvRows.join('\n');
+        const blob = new Blob([csvString], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `room-list-${packet?.code || 'export'}-${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    };
+
+    // Stats
+    const totalAssigned = rooms.reduce((sum, room) => sum + room.jamaah.length, 0);
+
     return (
         <div className={`space-y-6 animate-fade-in ${!packageIdOverride ? 'p-6' : ''}`}>
             {/* Header */}
-            {!packageIdOverride && (
-                <div className="flex items-center justify-between">
+            {/* Header / Action Bar */}
+            <div className="flex items-center justify-between">
+                {!packageIdOverride ? (
                     <div className="flex items-center gap-4">
                         <Link to="/paket">
                             <Button variant="ghost" size="sm" className="!p-2">
@@ -216,10 +276,33 @@ const RoomListPage = ({ packageIdOverride }) => {
                             </p>
                         </div>
                     </div>
-                </div>
-            )}
+                ) : (
+                    /* Spacer when no header needed */
+                    <div></div>
+                )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Action Toolbar - Always Visible */}
+                <div className="flex gap-2">
+                    <Button
+                        onClick={handleExportCSV}
+                        variant="outline"
+                        icon={<Download className="w-4 h-4" />}
+                        className="print:hidden"
+                    >
+                        Export CSV
+                    </Button>
+                    <Button
+                        onClick={handlePrint}
+                        variant="outline"
+                        icon={<Printer className="w-4 h-4" />}
+                        className="print:hidden"
+                    >
+                        Cetak
+                    </Button>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 print:hidden">
                 {/* Left Column: Unassigned Jamaah */}
                 <Card className="lg:col-span-1 h-[calc(100vh-200px)] flex flex-col">
                     <div className="p-4 border-b border-surface-border">
@@ -364,6 +447,107 @@ const RoomListPage = ({ packageIdOverride }) => {
                                 </div>
                             </Card>
                         ))}
+                    </div>
+                </div>
+            </div>
+
+            {/* Print View - Hidden on screen, visible on print */}
+            <div className="hidden print:block print:p-0">
+                <style>{`
+                    @media print {
+                        body * { visibility: hidden; }
+                        .print\\:block, .print\\:block * { visibility: visible; }
+                        .print\\:block { 
+                            position: absolute; 
+                            left: 0; 
+                            top: 0; 
+                            width: 100%;
+                            background: white;
+                            color: black;
+                        }
+                        @page { size: A4; margin: 1cm; }
+                    }
+                `}</style>
+
+                <div className="print:bg-white print:text-black">
+                    {/* Print Header */}
+                    <div className="text-center mb-6 border-b-2 border-black pb-4">
+                        <h1 className="text-2xl font-bold uppercase">DAFTAR KAMAR</h1>
+                        <p className="text-lg mt-1">{packet?.name} ({packet?.code})</p>
+                        <p className="text-sm text-gray-600 mt-1">
+                            Total Jamaah: {totalAssigned} orang | Total Kamar: {rooms.length}
+                        </p>
+                    </div>
+
+                    {/* Rooms Table */}
+                    <table className="w-full border-collapse text-sm">
+                        <thead>
+                            <tr className="bg-gray-200">
+                                <th className="border border-gray-400 px-3 py-2 text-left w-16">No</th>
+                                <th className="border border-gray-400 px-3 py-2 text-left w-24">No. Kamar</th>
+                                <th className="border border-gray-400 px-3 py-2 text-left w-24">Tipe</th>
+                                <th className="border border-gray-400 px-3 py-2 text-left">Nama Jamaah</th>
+                                <th className="border border-gray-400 px-3 py-2 text-center w-20">Jml</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {rooms.map((room, idx) => (
+                                <tr key={idx} className={idx % 2 === 1 ? 'bg-gray-50' : ''}>
+                                    <td className="border border-gray-400 px-3 py-2 text-center align-top">{idx + 1}</td>
+                                    <td className="border border-gray-400 px-3 py-2 font-semibold align-top">{room.roomNumber}</td>
+                                    <td className="border border-gray-400 px-3 py-2 capitalize align-top">
+                                        {room.roomType || 'Quad'}
+                                    </td>
+                                    <td className="border border-gray-400 px-3 py-2">
+                                        <ol className="list-decimal list-inside space-y-0.5">
+                                            {room.jamaah.map((j, jIdx) => (
+                                                <li key={j.id}>
+                                                    {j.name}
+                                                    <span className="text-gray-500 text-xs ml-1">
+                                                        ({j.gender === 'male' ? 'L' : 'P'})
+                                                    </span>
+                                                </li>
+                                            ))}
+                                        </ol>
+                                    </td>
+                                    <td className="border border-gray-400 px-3 py-2 text-center align-top">
+                                        {room.jamaah.length}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                        <tfoot>
+                            <tr className="bg-gray-200 font-semibold">
+                                <td colSpan={4} className="border border-gray-400 px-3 py-2 text-right">
+                                    Total Jamaah:
+                                </td>
+                                <td className="border border-gray-400 px-3 py-2 text-center">
+                                    {totalAssigned}
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+
+                    {/* Unassigned Section */}
+                    {unassigned.length > 0 && (
+                        <div className="mt-6">
+                            <h2 className="font-bold text-lg border-b border-gray-400 pb-2 mb-3">
+                                Belum Dapat Kamar ({unassigned.length} orang)
+                            </h2>
+                            <div className="grid grid-cols-3 gap-2 text-sm">
+                                {unassigned.map((j, idx) => (
+                                    <div key={j.id}>
+                                        {idx + 1}. {j.name} ({j.gender === 'male' ? 'L' : 'P'})
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Footer */}
+                    <div className="mt-8 pt-4 border-t border-gray-400 text-xs text-gray-500 flex justify-between">
+                        <span>Dicetak: {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                        <span>{packet?.name}</span>
                     </div>
                 </div>
             </div>

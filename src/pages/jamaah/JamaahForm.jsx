@@ -68,7 +68,7 @@ const JamaahForm = () => {
     const dateOfBirthValue = watch('dateOfBirth');
 
     useEffect(() => {
-        if (dateOfBirthValue && isValidIDDate(dateOfBirthValue)) {
+        if (dateOfBirthValue) {
             setValue('age', calculateAge(dateOfBirthValue));
         } else {
             setValue('age', '');

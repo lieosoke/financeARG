@@ -39,7 +39,7 @@ const createJamaahSchema = z.object({
     emergencyContactPhone: z.string().optional(),
     emergencyContactRelation: z.string().optional(),
     packageId: z.string().optional(),
-    seatNumber: z.number().int().positive().optional(),
+    seatNumber: z.number().int().positive().optional().nullable(),
     totalAmount: z.string().or(z.number()).transform(String),
     paidAmount: z.string().or(z.number()).transform(String).optional(),
     roomType: z.enum(['single', 'double', 'triple', 'quad', 'queen']).optional().nullable(),

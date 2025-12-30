@@ -21,6 +21,8 @@ export const expenseCategoryEnum = pgEnum('expense_category', [
     'hotel',
     'transport',
     'visa_handling',
+    'visa',
+    'handling',
     'muthawif',
     'konsumsi',
     'lainnya',

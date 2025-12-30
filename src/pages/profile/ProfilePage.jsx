@@ -7,7 +7,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { usersApi } from '../../services/api/users';
 
 const ProfilePage = () => {
-    const { user } = useAuth();
+    const { user, refetch } = useAuth();
     const [formData, setFormData] = useState({
         name: user?.name || 'Admin User',
         email: user?.email || 'admin@argtour.com',
@@ -48,7 +48,7 @@ const ProfilePage = () => {
             if (response.success) {
                 setMessage({ type: 'success', text: 'Profil berhasil diperbarui' });
                 // Optional: Update global auth context user if needed
-                // refetch session to update user data
+                await refetch();
             }
         } catch (error) {
             console.error('Update profile error:', error);

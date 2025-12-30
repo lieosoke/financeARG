@@ -67,20 +67,24 @@ const PengeluaranPage = () => {
 
     const categories = [
         { value: 'all', label: 'Semua' },
-        { value: 'tiket_pesawat', label: 'Tiket' },
+        { value: 'tiket_pesawat', label: 'Tiket Pesawat' },
         { value: 'hotel', label: 'Hotel' },
         { value: 'transport', label: 'Transport' },
-        { value: 'visa_handling', label: 'Handling' },
+        { value: 'visa', label: 'Visa' },
+        { value: 'handling', label: 'Handling' },
+        { value: 'muthawif', label: 'Muthawif' },
         { value: 'konsumsi', label: 'Konsumsi' },
         { value: 'lainnya', label: 'Lainnya' },
     ];
 
     const getCategoryBadge = (kategori) => {
         const config = {
-            tiket_pesawat: { variant: 'info', label: 'Tiket' },
+            tiket_pesawat: { variant: 'info', label: 'Tiket Pesawat' },
             hotel: { variant: 'primary', label: 'Hotel' },
             transport: { variant: 'warning', label: 'Transport' },
-            visa_handling: { variant: 'neutral', label: 'Handling' },
+            visa_handling: { variant: 'neutral', label: 'Visa & Handling' },
+            visa: { variant: 'neutral', label: 'Visa' },
+            handling: { variant: 'success', label: 'Handling' },
             muthawif: { variant: 'success', label: 'Muthawif' },
             konsumsi: { variant: 'success', label: 'Konsumsi' },
             lainnya: { variant: 'neutral', label: 'Lainnya' },
