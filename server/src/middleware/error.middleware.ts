@@ -50,6 +50,25 @@ export const errorHandler = (
         message = err.message;
         error = statusCode < 500 ? 'Client Error' : 'Server Error';
     }
+    // Handle standard Error objects with custom messages (like validation errors from services)
+    else if (err instanceof Error && err.message) {
+        // If the error message is user-friendly, use it
+        const userFriendlyPatterns = [
+            /sudah terdaftar/i,
+            /tidak ditemukan/i,
+            /tidak valid/i,
+            /gagal/i,
+            /duplikat/i,
+        ];
+
+        const isUserFriendly = userFriendlyPatterns.some(pattern => pattern.test(err.message));
+
+        if (isUserFriendly) {
+            statusCode = 400;
+            error = 'Validation Error';
+            message = err.message;
+        }
+    }
 
     // Handle known error types
     if (err.name === 'ValidationError') {

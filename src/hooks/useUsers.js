@@ -46,7 +46,7 @@ export const useUser = (id, options = {}) => {
 /**
  * Update user mutation
  */
-export const useUpdateUser = () => {
+export const useUpdateUser = (options = {}) => {
     const queryClient = useQueryClient();
 
     return useMutation({
@@ -54,10 +54,14 @@ export const useUpdateUser = () => {
             const response = await usersApi.update(id, data);
             return response.data;
         },
-        onSuccess: (data, variables) => {
+        ...options,
+        onSuccess: (data, variables, ...args) => {
             // Invalidate user list and detail
             queryClient.invalidateQueries({ queryKey: userKeys.lists() });
             queryClient.invalidateQueries({ queryKey: userKeys.detail(variables.id) });
+            if (options.onSuccess) {
+                options.onSuccess(data, variables, ...args);
+            }
         },
     });
 };
@@ -65,7 +69,7 @@ export const useUpdateUser = () => {
 /**
  * Delete user mutation
  */
-export const useDeleteUser = () => {
+export const useDeleteUser = (options = {}) => {
     const queryClient = useQueryClient();
 
     return useMutation({
@@ -73,9 +77,13 @@ export const useDeleteUser = () => {
             const response = await usersApi.delete(id);
             return response;
         },
-        onSuccess: () => {
+        ...options,
+        onSuccess: (...args) => {
             // Invalidate user list
             queryClient.invalidateQueries({ queryKey: userKeys.lists() });
+            if (options.onSuccess) {
+                options.onSuccess(...args);
+            }
         },
     });
 };

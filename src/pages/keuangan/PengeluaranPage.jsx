@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Plus, ArrowDownRight, ChevronLeft, ChevronRight, Loader2, Trash2, AlertCircle, RefreshCw } from 'lucide-react';
+import { Search, Plus, ArrowDownRight, ChevronLeft, ChevronRight, Loader2, Trash2, Edit2, AlertCircle, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Card from '../../components/molecules/Card';
 import Button from '../../components/atoms/Button';
@@ -7,13 +7,15 @@ import Input from '../../components/atoms/Input';
 import Badge from '../../components/atoms/Badge';
 import { formatCurrency } from '../../utils/formatters';
 import { useExpenseTransactions, useDeleteTransaction } from '../../hooks/useTransactions';
-import { AddExpenseModal } from '../../components/modals';
+import { AddExpenseModal, EditExpenseModal } from '../../components/modals';
 import { formatDateToID } from '../../utils/dateUtils';
 
 const PengeluaranPage = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [filterCategory, setFilterCategory] = useState('all');
     const [showAddModal, setShowAddModal] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [selectedExpense, setSelectedExpense] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
     const limit = 10;
 
@@ -39,6 +41,11 @@ const PengeluaranPage = () => {
         if (window.confirm(`Yakin ingin menghapus transaksi ini ? `)) {
             deleteMutation.mutate(item.id);
         }
+    };
+
+    const handleEdit = (item) => {
+        setSelectedExpense(item);
+        setShowEditModal(true);
     };
 
     // Extract data with fallbacks
@@ -251,15 +258,25 @@ const PengeluaranPage = () => {
                                                 </span>
                                             </td>
                                             <td className="px-4 py-4 text-center">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="!p-2 text-rose-400 hover:text-rose-300"
-                                                    onClick={() => handleDelete(item)}
-                                                    disabled={deleteMutation.isPending}
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </Button>
+                                                <div className="flex items-center justify-center gap-1">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="!p-2"
+                                                        onClick={() => handleEdit(item)}
+                                                    >
+                                                        <Edit2 className="w-4 h-4" />
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="!p-2 text-rose-400 hover:text-rose-300"
+                                                        onClick={() => handleDelete(item)}
+                                                        disabled={deleteMutation.isPending}
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </Button>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))}
@@ -301,6 +318,15 @@ const PengeluaranPage = () => {
             <AddExpenseModal
                 isOpen={showAddModal}
                 onClose={() => setShowAddModal(false)}
+            />
+            {/* Edit Expense Modal */}
+            <EditExpenseModal
+                isOpen={showEditModal}
+                onClose={() => {
+                    setShowEditModal(false);
+                    setSelectedExpense(null);
+                }}
+                initialData={selectedExpense}
             />
         </div>
     );

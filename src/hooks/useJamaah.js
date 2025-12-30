@@ -83,12 +83,15 @@ export function useCreateJamaah(options = {}) {
 
     return useMutation({
         mutationFn: (data) => jamaahService.create(data),
-        onSuccess: () => {
+        ...options,
+        onSuccess: (...args) => {
             queryClient.invalidateQueries({ queryKey: jamaahKeys.lists() });
             queryClient.invalidateQueries({ queryKey: jamaahKeys.stats() });
             queryClient.invalidateQueries({ queryKey: jamaahKeys.unpaid({}) });
+            if (options.onSuccess) {
+                options.onSuccess(...args);
+            }
         },
-        ...options,
     });
 }
 
@@ -100,13 +103,16 @@ export function useUpdateJamaah(options = {}) {
 
     return useMutation({
         mutationFn: ({ id, data }) => jamaahService.update(id, data),
-        onSuccess: (_, { id }) => {
+        ...options,
+        onSuccess: (_, { id }, ...args) => {
             queryClient.invalidateQueries({ queryKey: jamaahKeys.lists() });
             queryClient.invalidateQueries({ queryKey: jamaahKeys.detail(id) });
             queryClient.invalidateQueries({ queryKey: jamaahKeys.stats() });
             queryClient.invalidateQueries({ queryKey: jamaahKeys.unpaid({}) });
+            if (options.onSuccess) {
+                options.onSuccess(_, { id }, ...args);
+            }
         },
-        ...options,
     });
 }
 
@@ -118,11 +124,14 @@ export function useDeleteJamaah(options = {}) {
 
     return useMutation({
         mutationFn: (id) => jamaahService.remove(id),
-        onSuccess: () => {
+        ...options,
+        onSuccess: (...args) => {
             queryClient.invalidateQueries({ queryKey: jamaahKeys.lists() });
             queryClient.invalidateQueries({ queryKey: jamaahKeys.stats() });
+            if (options.onSuccess) {
+                options.onSuccess(...args);
+            }
         },
-        ...options,
     });
 }
 
@@ -134,11 +143,14 @@ export function useBulkUpdateJamaah(options = {}) {
 
     return useMutation({
         mutationFn: (updates) => jamaahService.bulkUpdate(updates),
-        onSuccess: () => {
+        ...options,
+        onSuccess: (...args) => {
             queryClient.invalidateQueries({ queryKey: jamaahKeys.lists() });
             queryClient.invalidateQueries({ queryKey: jamaahKeys.stats() });
             queryClient.invalidateQueries({ queryKey: jamaahKeys.unpaid({}) });
+            if (options.onSuccess) {
+                options.onSuccess(...args);
+            }
         },
-        ...options,
     });
 }

@@ -18,13 +18,43 @@ interface Pagination {
 
 export const jamaahService = {
     /**
+     * Check for duplicate jamaah by NIK
+     * NIK must be unique if provided
+     */
+    async checkDuplicate(name: string, nik: string | null, excludeId?: string): Promise<Jamaah | null> {
+        // Only check for duplicate NIK if provided
+        if (!nik) {
+            return null;
+        }
+
+        const conditions = [
+            eq(jamaah.nik, nik)
+        ];
+
+        // Exclude current jamaah when updating
+        if (excludeId) {
+            conditions.push(ne(jamaah.id, excludeId));
+        }
+
+        const [duplicate] = await db
+            .select()
+            .from(jamaah)
+            .where(and(...conditions))
+            .limit(1);
+
+        return duplicate || null;
+    },
+
+    /**
      * Get all jamaah with filters and pagination
      */
     async getAll(filters: JamaahFilters, pagination: Pagination) {
         const { page, limit } = pagination;
         const offset = (page - 1) * limit;
 
-        const conditions = [];
+        const conditions = [
+            eq(jamaah.isActive, true) // Only show active jamaah
+        ];
 
         if (filters.packageId) {
             conditions.push(eq(jamaah.packageId, filters.packageId));
@@ -137,6 +167,16 @@ export const jamaahService = {
      * Create a new jamaah
      */
     async create(data: NewJamaah, userId: string): Promise<Jamaah> {
+        // Check for duplicate NIK (if provided)
+        const duplicate = await this.checkDuplicate(data.name, data.nik || null);
+        if (duplicate) {
+            const { ApiError } = await import('../middleware/error.middleware');
+            throw new ApiError(
+                409,
+                `NIK "${data.nik}" sudah terdaftar atas nama "${duplicate.name}". Setiap jamaah harus memiliki NIK yang unik.`
+            );
+        }
+
         // Calculate remaining amount
         const totalAmount = parseFloat(data.totalAmount);
         const paidAmount = parseFloat(data.paidAmount || '0');
@@ -236,11 +276,26 @@ export const jamaahService = {
     },
 
     /**
-     * Update a jamaah
-     */
+ * Update a jamaah
+ */
     async update(id: string, data: Partial<NewJamaah>, userId: string): Promise<Jamaah | null> {
         const existingJamaah = await this.getById(id);
         if (!existingJamaah) return null;
+
+        // Check for duplicate NIK if being changed
+        if (data.name || data.nik) {
+            const nameToCheck = data.name || existingJamaah.name;
+            const nikToCheck = data.nik !== undefined ? data.nik : existingJamaah.nik;
+
+            const duplicate = await this.checkDuplicate(nameToCheck, nikToCheck || null, id);
+            if (duplicate) {
+                const { ApiError } = await import('../middleware/error.middleware');
+                throw new ApiError(
+                    409,
+                    `NIK "${nikToCheck}" sudah terdaftar atas nama "${duplicate.name}". Setiap jamaah harus memiliki NIK yang unik.`
+                );
+            }
+        }
 
         // Recalculate remaining amount if payment info changed
         let updateData: any = { ...data, updatedAt: new Date() };

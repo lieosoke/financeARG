@@ -13,10 +13,11 @@ router.use(authMiddleware);
 
 // Validation schemas
 const createIncomeSchema = z.object({
-    jamaahId: z.string().optional(),
-    packageId: z.string().optional(),
+    jamaahId: z.string().min(1, 'Jamaah wajib dipilih'),
+    packageId: z.string().min(1, 'Paket wajib dipilih'),
     incomeCategory: z.enum(['dp', 'cicilan', 'pelunasan', 'lainnya']),
     amount: z.string().or(z.number()).transform(String),
+    discount: z.string().or(z.number()).optional().transform(val => val ? String(val) : '0'),
     paymentMethod: z
         .enum(['bank_bca', 'bank_mandiri', 'bank_bni', 'bank_bri', 'bank_syariah', 'cash', 'transfer'])
         .optional(),

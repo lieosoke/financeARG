@@ -63,10 +63,10 @@ const Modal = ({
         >
             <div
                 ref={modalRef}
-                className={`w-full ${sizeClasses[size]} bg-dark-secondary border border-surface-border rounded-2xl shadow-2xl animate-slide-up`}
+                className={`w-full ${sizeClasses[size]} bg-dark-secondary border border-surface-border rounded-2xl shadow-2xl animate-slide-up max-h-[90vh] flex flex-col`}
             >
                 {/* Header */}
-                <div className="flex items-start justify-between p-6 border-b border-surface-border">
+                <div className="flex items-start justify-between p-6 border-b border-surface-border flex-shrink-0">
                     <div>
                         <h2 className="text-xl font-semibold text-white">{title}</h2>
                         {subtitle && (
@@ -86,7 +86,7 @@ const Modal = ({
                 </div>
 
                 {/* Content */}
-                <div className="p-6">
+                <div className="p-6 overflow-y-auto">
                     {children}
                 </div>
             </div>

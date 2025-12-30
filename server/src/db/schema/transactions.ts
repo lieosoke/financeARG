@@ -52,6 +52,7 @@ export const transactions = pgTable('transactions', {
 
     // Amount
     amount: decimal('amount', { precision: 15, scale: 2 }).notNull(),
+    discount: decimal('discount', { precision: 15, scale: 2 }).default('0'),
 
     // Reference
     packageId: text('package_id').references(() => packages.id),

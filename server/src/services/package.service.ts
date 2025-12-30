@@ -1,5 +1,5 @@
 import { db } from '../config/database';
-import { packages, NewPackage, Package } from '../db/schema';
+import { packages, NewPackage, Package, jamaah } from '../db/schema';
 import { eq, desc, and, like, sql, count } from 'drizzle-orm';
 import { auditService } from './audit.service';
 
@@ -52,8 +52,29 @@ export const packageService = {
                 .where(whereClause),
         ]);
 
+        // Calculate filledSeats for each package by counting active jamaah
+        const packagesWithFilledSeats = await Promise.all(
+            data.map(async (pkg) => {
+                const [jamaahCount] = await db
+                    .select({ count: count() })
+                    .from(jamaah)
+                    .where(
+                        and(
+                            eq(jamaah.packageId, pkg.id),
+                            eq(jamaah.isActive, true),
+                            eq(jamaah.isCancelled, false)
+                        )
+                    );
+
+                return {
+                    ...pkg,
+                    filledSeats: jamaahCount?.count || 0,
+                };
+            })
+        );
+
         return {
-            data,
+            data: packagesWithFilledSeats,
             pagination: {
                 page,
                 limit,

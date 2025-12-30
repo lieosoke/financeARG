@@ -1,19 +1,26 @@
 import React, { useState } from 'react';
-import { Search, Plus, ArrowUpRight, ChevronLeft, ChevronRight, Loader2, Trash2, AlertCircle, RefreshCw } from 'lucide-react';
+import { Search, Plus, ArrowUpRight, ChevronLeft, ChevronRight, Loader2, Trash2, AlertCircle, RefreshCw, Wallet, CreditCard, Eye, Edit, Printer, FileText, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 import Card from '../../components/molecules/Card';
 import Button from '../../components/atoms/Button';
 import Input from '../../components/atoms/Input';
 import Badge from '../../components/atoms/Badge';
 import { formatCurrency } from '../../utils/formatters';
 import { useIncomeTransactions, useDeleteTransaction } from '../../hooks/useTransactions';
-import { AddIncomeModal } from '../../components/modals';
+import { AddIncomeModal, EditIncomeModal, ViewIncomeModal, ImageModal } from '../../components/modals'; // Updated import
 import { formatDateToID } from '../../utils/dateUtils';
 
 const PemasukanPage = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [filterCategory, setFilterCategory] = useState('all');
     const [showAddModal, setShowAddModal] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [showViewModal, setShowViewModal] = useState(false);
+    const [showImageModal, setShowImageModal] = useState(false); // New state
+    const [selectedTransaction, setSelectedTransaction] = useState(null);
+    const [selectedImageUrl, setSelectedImageUrl] = useState(null); // New state
     const [currentPage, setCurrentPage] = useState(1);
     const limit = 10;
 
@@ -39,6 +46,21 @@ const PemasukanPage = () => {
         if (window.confirm(`Yakin ingin menghapus transaksi ini?`)) {
             deleteMutation.mutate(item.id);
         }
+    };
+
+    const handleEdit = (item) => {
+        setSelectedTransaction(item);
+        setShowEditModal(true);
+    };
+
+    const handleView = (item) => {
+        setSelectedTransaction(item);
+        setShowViewModal(true);
+    };
+
+    const handleViewImage = (url) => {
+        setSelectedImageUrl(url);
+        setShowImageModal(true);
     };
 
     // Extract data with fallbacks
@@ -82,9 +104,101 @@ const PemasukanPage = () => {
         return <Badge variant={cat.variant}>{cat.label}</Badge>;
     };
 
+    const getPaymentMethodBadge = (method) => {
+        if (method === 'cash') {
+            return (
+                <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 text-xs font-medium">
+                    <Wallet className="w-3 h-3" />
+                    Cash
+                </span>
+            );
+        } else if (method === 'transfer') {
+            return (
+                <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-blue-500/10 text-blue-400 text-xs font-medium">
+                    <CreditCard className="w-3 h-3" />
+                    Transfer
+                </span>
+            );
+        }
+        return <span className="text-gray-500 text-xs">-</span>;
+    };
+
     const handleFilterChange = (value) => {
         setFilterCategory(value);
         setCurrentPage(1);
+    };
+
+    // --- Export Functions ---
+
+    const handlePrint = () => {
+        window.print();
+    };
+
+    const handleExportCSV = () => {
+        if (!filteredData.length) {
+            toast.error('Tidak ada data untuk diexport');
+            return;
+        }
+
+        const headers = ['Tanggal', 'Jamaah', 'Paket', 'Kategori', 'Metode', 'Jumlah', 'Keterangan'];
+        const csvContent = [
+            headers.join(','),
+            ...filteredData.map(item => [
+                item.transactionDate ? formatDateToID(item.transactionDate) : '-',
+                `"${item.jamaah?.name || '-'}"`,
+                `"${item.package?.packageName || item.package?.name || '-'}"`,
+                item.incomeCategory,
+                item.paymentMethod,
+                parseFloat(item.amount) || 0,
+                `"${item.description || ''}"`
+            ].join(','))
+        ].join('\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `pemasukan_${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    const handleExportPDF = () => {
+        if (!filteredData.length) {
+            toast.error('Tidak ada data untuk diexport');
+            return;
+        }
+
+        const doc = new jsPDF();
+
+        // Add Title
+        doc.setFontSize(18);
+        doc.text('Laporan Pemasukan', 14, 22);
+
+        doc.setFontSize(11);
+        doc.text(`Tanggal Cetak: ${formatDateToID(new Date())}`, 14, 30);
+        doc.text(`Total Pemasukan: ${formatCurrency(totalIncome)}`, 14, 36);
+
+        // Table
+        const tableColumn = ["Tanggal", "Jamaah", "Paket", "Kategori", "Metode", "Jumlah"];
+        const tableRows = filteredData.map(item => [
+            item.transactionDate ? formatDateToID(item.transactionDate) : '-',
+            item.jamaah?.name || '-',
+            item.package?.packageName || item.package?.name || '-',
+            item.incomeCategory,
+            item.paymentMethod,
+            formatCurrency(parseFloat(item.amount) || 0)
+        ]);
+
+        doc.autoTable({
+            head: [tableColumn],
+            body: tableRows,
+            startY: 44,
+        });
+
+        doc.save(`pemasukan_${new Date().toISOString().split('T')[0]}.pdf`);
     };
 
     // Error state
@@ -117,70 +231,85 @@ const PemasukanPage = () => {
     return (
         <div className="space-y-6 animate-fade-in">
             {/* Page Header */}
-            <div className="page-header flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="page-header flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
                 <div>
                     <h1 className="page-title">Pemasukan</h1>
                     <p className="text-sm text-gray-500 mt-1">Kelola transaksi pemasukan dari jamaah</p>
                 </div>
-                <Button icon={<Plus className="w-4 h-4" />} onClick={() => setShowAddModal(true)}>
-                    Tambah Pemasukan
-                </Button>
+                <div className="flex flex-wrap gap-2 w-full lg:w-auto">
+                    <Button variant="outline" size="sm" onClick={handlePrint} icon={<Printer className="w-4 h-4" />}>
+                        Print
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={handleExportCSV} icon={<FileText className="w-4 h-4" />}>
+                        CSV
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={handleExportPDF} icon={<Download className="w-4 h-4" />}>
+                        PDF
+                    </Button>
+                    <Button icon={<Plus className="w-4 h-4" />} onClick={() => setShowAddModal(true)} className="flex-1 lg:flex-none">
+                        Tambah Pemasukan
+                    </Button>
+                </div>
             </div>
 
-            {/* Summary Card */}
-            <Card className="!p-4 bg-gradient-to-r from-emerald-500/10 to-emerald-600/5 border-emerald-500/20">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center">
-                            {isLoading ? (
-                                <Loader2 className="w-6 h-6 animate-spin text-emerald-400" />
-                            ) : (
-                                <ArrowUpRight className="w-6 h-6 text-emerald-400" />
-                            )}
+            {/* Summary Card - Hide on Print */}
+            <div className="print:hidden">
+                <Card className="!p-4 bg-gradient-to-r from-emerald-500/10 to-emerald-600/5 border-emerald-500/20">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center">
+                                {isLoading ? (
+                                    <Loader2 className="w-6 h-6 animate-spin text-emerald-400" />
+                                ) : (
+                                    <ArrowUpRight className="w-6 h-6 text-emerald-400" />
+                                )}
+                            </div>
+                            <div>
+                                <p className="text-sm text-gray-400">Total Pemasukan</p>
+                                <p className="text-2xl font-bold text-emerald-400">
+                                    {isLoading ? '...' : formatCurrency(totalIncome)}
+                                </p>
+                            </div>
                         </div>
-                        <div>
-                            <p className="text-sm text-gray-400">Total Pemasukan</p>
-                            <p className="text-2xl font-bold text-emerald-400">
-                                {isLoading ? '...' : formatCurrency(totalIncome)}
+                        <div className="text-right">
+                            <p className="text-sm text-gray-500">
+                                {isLoading ? '...' : `${filteredData.length} transaksi`}
                             </p>
                         </div>
                     </div>
-                    <div className="text-right">
-                        <p className="text-sm text-gray-500">
-                            {isLoading ? '...' : `${filteredData.length} transaksi`}
-                        </p>
-                    </div>
-                </div>
-            </Card>
+                </Card>
+            </div>
 
-            {/* Filters */}
-            <Card>
-                <div className="flex flex-col lg:flex-row gap-4">
-                    <div className="flex-1">
-                        <Input
-                            placeholder="Cari nama jamaah atau paket..."
-                            icon={<Search className="w-4 h-4" />}
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                        />
+            {/* Filters - Hide on Print */}
+            <div className="print:hidden">
+                <Card>
+                    <div className="flex flex-col lg:flex-row gap-4">
+                        <div className="flex-1">
+                            <Input
+                                placeholder="Cari nama jamaah atau paket..."
+                                icon={<Search className="w-4 h-4" />}
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
+                        </div>
+                        <div className="flex gap-2 flex-wrap">
+                            {categories.map((cat) => (
+                                <Button
+                                    key={cat.value}
+                                    variant={filterCategory === cat.value ? 'primary' : 'secondary'}
+                                    size="sm"
+                                    onClick={() => handleFilterChange(cat.value)}
+                                >
+                                    {cat.label}
+                                </Button>
+                            ))}
+                        </div>
                     </div>
-                    <div className="flex gap-2 flex-wrap">
-                        {categories.map((cat) => (
-                            <Button
-                                key={cat.value}
-                                variant={filterCategory === cat.value ? 'primary' : 'secondary'}
-                                size="sm"
-                                onClick={() => handleFilterChange(cat.value)}
-                            >
-                                {cat.label}
-                            </Button>
-                        ))}
-                    </div>
-                </div>
-            </Card>
+                </Card>
+            </div>
 
             {/* Data Table */}
-            <Card>
+            <Card className="print:shadow-none print:border-none">
                 {isLoading ? (
                     <div className="flex items-center justify-center py-12">
                         <div className="text-center">
@@ -213,12 +342,12 @@ const PemasukanPage = () => {
                                             Kategori
                                         </th>
                                         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                                            Keterangan
+                                            Metode
                                         </th>
                                         <th className="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">
                                             Jumlah
                                         </th>
-                                        <th className="px-4 py-3 text-center text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                                        <th className="px-4 py-3 text-center text-xs font-semibold text-gray-400 uppercase tracking-wider print:hidden">
                                             Aksi
                                         </th>
                                     </tr>
@@ -242,24 +371,60 @@ const PemasukanPage = () => {
                                             <td className="px-4 py-4 whitespace-nowrap">
                                                 {getCategoryBadge(item.incomeCategory)}
                                             </td>
-                                            <td className="px-4 py-4 text-sm text-gray-400">
-                                                {item.description || item.notes || '-'}
+                                            <td className="px-4 py-4 whitespace-nowrap">
+                                                {getPaymentMethodBadge(item.paymentMethod)}
                                             </td>
                                             <td className="px-4 py-4 text-right">
                                                 <span className="font-tabular font-semibold text-emerald-400">
                                                     +{formatCurrency(parseFloat(item.amount) || 0)}
                                                 </span>
                                             </td>
-                                            <td className="px-4 py-4 text-center">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="!p-2 text-rose-400 hover:text-rose-300"
-                                                    onClick={() => handleDelete(item)}
-                                                    disabled={deleteMutation.isPending}
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </Button>
+                                            <td className="px-4 py-4 text-center print:hidden">
+                                                <div className="flex items-center justify-center gap-2">
+                                                    {(item.receiptUrl && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="!p-2 text-primary-400 hover:text-primary-300"
+                                                            onClick={() => handleViewImage(item.receiptUrl)}
+                                                            title="Bukti"
+                                                        >
+                                                            <FileText className="w-4 h-4" />
+                                                        </Button>
+                                                    )) || ((
+                                                        <span className="w-8 h-8 flex items-center justify-center">
+                                                            <span className="text-gray-600 text-xs">-</span>
+                                                        </span>
+                                                    ))}
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="!p-2 text-blue-400 hover:text-blue-300"
+                                                        onClick={() => handleView(item)}
+                                                        title="Lihat Detail"
+                                                    >
+                                                        <Eye className="w-4 h-4" />
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="!p-2 text-warning-400 hover:text-warning-300"
+                                                        onClick={() => handleEdit(item)}
+                                                        title="Edit"
+                                                    >
+                                                        <Edit className="w-4 h-4" />
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="!p-2 text-rose-400 hover:text-rose-300"
+                                                        onClick={() => handleDelete(item)}
+                                                        disabled={deleteMutation.isPending}
+                                                        title="Hapus"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </Button>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))}
@@ -267,8 +432,8 @@ const PemasukanPage = () => {
                             </table>
                         </div>
 
-                        {/* Pagination */}
-                        <div className="flex items-center justify-between mt-6 pt-4 border-t border-surface-border">
+                        {/* Pagination - Hide on Print */}
+                        <div className="flex items-center justify-between mt-6 pt-4 border-t border-surface-border print:hidden">
                             <p className="text-sm text-gray-500">
                                 Menampilkan {filteredData.length} dari {pagination.total} transaksi
                             </p>
@@ -297,10 +462,38 @@ const PemasukanPage = () => {
                     </>
                 )}
             </Card>
-            {/* Add Income Modal */}
+
+            {/* Modals */}
             <AddIncomeModal
                 isOpen={showAddModal}
                 onClose={() => setShowAddModal(false)}
+            />
+
+            <EditIncomeModal
+                isOpen={showEditModal}
+                onClose={() => {
+                    setShowEditModal(false);
+                    setSelectedTransaction(null);
+                }}
+                initialData={selectedTransaction}
+            />
+
+            <ViewIncomeModal
+                isOpen={showViewModal}
+                onClose={() => {
+                    setShowViewModal(false);
+                    setSelectedTransaction(null);
+                }}
+                data={selectedTransaction}
+            />
+
+            <ImageModal
+                isOpen={showImageModal}
+                onClose={() => {
+                    setShowImageModal(false);
+                    setSelectedImageUrl(null);
+                }}
+                imageUrl={selectedImageUrl}
             />
         </div>
     );

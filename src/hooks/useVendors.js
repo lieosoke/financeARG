@@ -67,10 +67,13 @@ export function useCreateVendor(options = {}) {
 
     return useMutation({
         mutationFn: (data) => vendorService.create(data),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: vendorKeys.lists() });
-        },
         ...options,
+        onSuccess: (...args) => {
+            queryClient.invalidateQueries({ queryKey: vendorKeys.lists() });
+            if (options.onSuccess) {
+                options.onSuccess(...args);
+            }
+        },
     });
 }
 
@@ -82,11 +85,14 @@ export function useUpdateVendor(options = {}) {
 
     return useMutation({
         mutationFn: ({ id, data }) => vendorService.update(id, data),
-        onSuccess: (_, { id }) => {
+        ...options,
+        onSuccess: (_, { id }, ...args) => {
             queryClient.invalidateQueries({ queryKey: vendorKeys.lists() });
             queryClient.invalidateQueries({ queryKey: vendorKeys.detail(id) });
+            if (options.onSuccess) {
+                options.onSuccess(_, { id }, ...args);
+            }
         },
-        ...options,
     });
 }
 
@@ -98,10 +104,13 @@ export function useDeleteVendor(options = {}) {
 
     return useMutation({
         mutationFn: (id) => vendorService.remove(id),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: vendorKeys.lists() });
-        },
         ...options,
+        onSuccess: (...args) => {
+            queryClient.invalidateQueries({ queryKey: vendorKeys.lists() });
+            if (options.onSuccess) {
+                options.onSuccess(...args);
+            }
+        },
     });
 }
 
@@ -154,11 +163,14 @@ export function useCreateVendorDebt(options = {}) {
 
     return useMutation({
         mutationFn: (data) => vendorDebtService.create(data),
-        onSuccess: () => {
+        ...options,
+        onSuccess: (...args) => {
             queryClient.invalidateQueries({ queryKey: vendorDebtKeys.lists() });
             queryClient.invalidateQueries({ queryKey: vendorDebtKeys.totalOutstanding() });
+            if (options.onSuccess) {
+                options.onSuccess(...args);
+            }
         },
-        ...options,
     });
 }
 
@@ -170,12 +182,15 @@ export function useUpdateVendorDebt(options = {}) {
 
     return useMutation({
         mutationFn: ({ id, data }) => vendorDebtService.update(id, data),
-        onSuccess: (_, { id }) => {
+        ...options,
+        onSuccess: (_, { id }, ...args) => {
             queryClient.invalidateQueries({ queryKey: vendorDebtKeys.lists() });
             queryClient.invalidateQueries({ queryKey: vendorDebtKeys.detail(id) });
             queryClient.invalidateQueries({ queryKey: vendorDebtKeys.totalOutstanding() });
+            if (options.onSuccess) {
+                options.onSuccess(_, { id }, ...args);
+            }
         },
-        ...options,
     });
 }
 
@@ -187,11 +202,14 @@ export function usePayVendorDebt(options = {}) {
 
     return useMutation({
         mutationFn: ({ id, amount }) => vendorDebtService.pay(id, amount),
-        onSuccess: (_, { id }) => {
+        ...options,
+        onSuccess: (_, { id }, ...args) => {
             queryClient.invalidateQueries({ queryKey: vendorDebtKeys.lists() });
             queryClient.invalidateQueries({ queryKey: vendorDebtKeys.detail(id) });
             queryClient.invalidateQueries({ queryKey: vendorDebtKeys.totalOutstanding() });
+            if (options.onSuccess) {
+                options.onSuccess(_, { id }, ...args);
+            }
         },
-        ...options,
     });
 }

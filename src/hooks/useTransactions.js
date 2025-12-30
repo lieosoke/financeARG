@@ -100,11 +100,14 @@ export function useCreateIncome(options = {}) {
 
     return useMutation({
         mutationFn: (data) => transactionService.createIncome(data),
-        onSuccess: () => {
+        ...options,
+        onSuccess: (...args) => {
             queryClient.invalidateQueries({ queryKey: transactionKeys.income() });
             queryClient.invalidateQueries({ queryKey: transactionKeys.all });
+            if (options.onSuccess) {
+                options.onSuccess(...args);
+            }
         },
-        ...options,
     });
 }
 
@@ -116,11 +119,33 @@ export function useCreateExpense(options = {}) {
 
     return useMutation({
         mutationFn: (data) => transactionService.createExpense(data),
-        onSuccess: () => {
+        ...options,
+        onSuccess: (...args) => {
             queryClient.invalidateQueries({ queryKey: transactionKeys.expenses() });
             queryClient.invalidateQueries({ queryKey: transactionKeys.all });
+            if (options.onSuccess) {
+                options.onSuccess(...args);
+            }
         },
+    });
+}
+
+/**
+ * Hook to update a transaction
+ */
+export function useUpdateTransaction(options = {}) {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ id, data }) => transactionService.update(id, data),
         ...options,
+        onSuccess: (data, variables, ...args) => {
+            queryClient.invalidateQueries({ queryKey: transactionKeys.detail(variables.id) });
+            queryClient.invalidateQueries({ queryKey: transactionKeys.all });
+            if (options.onSuccess) {
+                options.onSuccess(data, variables, ...args);
+            }
+        },
     });
 }
 
@@ -132,9 +157,12 @@ export function useDeleteTransaction(options = {}) {
 
     return useMutation({
         mutationFn: (id) => transactionService.remove(id),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: transactionKeys.all });
-        },
         ...options,
+        onSuccess: (...args) => {
+            queryClient.invalidateQueries({ queryKey: transactionKeys.all });
+            if (options.onSuccess) {
+                options.onSuccess(...args);
+            }
+        },
     });
 }

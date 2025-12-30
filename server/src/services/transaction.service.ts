@@ -5,6 +5,8 @@ import {
     packages,
     vendors,
     vendorDebts,
+    invoices,
+    invoiceItems,
     NewTransaction,
     Transaction,
 } from '../db/schema';
@@ -120,11 +122,17 @@ export const transactionService = {
     /**
      * Create income transaction
      */
-    async createIncome(data: NewTransaction, userId: string): Promise<Transaction> {
+    async createIncome(data: NewTransaction & { discount?: string }, userId: string): Promise<Transaction> {
+        // Calculate net amount after discount
+        const grossAmount = parseFloat(data.amount);
+        const discount = parseFloat(data.discount || '0');
+        const netAmount = grossAmount - discount;
+
         // Convert transactionDate string to Date object
         const processedData: any = {
             ...data,
             type: 'pemasukan',
+            discount: data.discount || '0',
             createdById: userId,
         };
         if ('transactionDate' in data) {
@@ -137,12 +145,15 @@ export const transactionService = {
             .returning();
 
         // Update jamaah payment if linked
+        // - paidAmount: increases by netAmount (actual money received)
+        // - remainingAmount: decreases by grossAmount (payment + discount = total credit applied)
+        // This ensures discount reduces what jamaah owes, not counted as debt
         if (data.jamaahId) {
             await db
                 .update(jamaah)
                 .set({
-                    paidAmount: sql`${jamaah.paidAmount} + ${data.amount}`,
-                    remainingAmount: sql`${jamaah.remainingAmount} - ${data.amount}`,
+                    paidAmount: sql`${jamaah.paidAmount} + ${netAmount}`,
+                    remainingAmount: sql`${jamaah.remainingAmount} - ${grossAmount}`,
                     updatedAt: new Date(),
                 })
                 .where(eq(jamaah.id, data.jamaahId));
@@ -170,13 +181,32 @@ export const transactionService = {
             }
         }
 
+        // Create invoice automatically if jamaah and package are linked
+        if (data.jamaahId && data.packageId) {
+            try {
+                await this.createInvoiceFromTransaction({
+                    jamaahId: data.jamaahId,
+                    packageId: data.packageId,
+                    subtotal: data.amount,
+                    discount: data.discount || '0',
+                    total: String(netAmount),
+                    transactionId: newTransaction.id,
+                    incomeCategory: data.incomeCategory || 'lainnya',
+                    description: data.description || undefined,
+                }, userId);
+            } catch (error) {
+                console.error('Failed to create invoice:', error);
+                // Don't fail the transaction if invoice creation fails
+            }
+        }
+
         // Log audit
         await auditService.log({
             userId,
             action: 'create',
             entity: 'transaction',
             entityId: newTransaction.id,
-            entityName: `Pemasukan: ${data.amount}`,
+            entityName: `Pemasukan: ${data.amount}${discount > 0 ? ` (Diskon: ${discount})` : ''}`,
             newValues: newTransaction,
         });
 
@@ -184,12 +214,12 @@ export const transactionService = {
         const jamaahInfo = data.jamaahId
             ? await db.select().from(jamaah).where(eq(jamaah.id, data.jamaahId)).then(r => r[0])
             : null;
-        const formattedAmount = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(parseFloat(data.amount));
+        const formattedAmount = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(netAmount);
 
         await notificationService.createForAllUsers({
             title: 'Pembayaran Masuk',
             message: jamaahInfo
-                ? `Pembayaran ${formattedAmount} dari ${jamaahInfo.name}`
+                ? `Pembayaran ${formattedAmount} dari ${jamaahInfo.name}${discount > 0 ? ' (termasuk diskon)' : ''}`
                 : `Pemasukan ${formattedAmount} telah dicatat`,
             type: 'success',
             link: '/keuangan/pemasukan',
@@ -296,14 +326,44 @@ export const transactionService = {
 
         // Reverse the effects on jamaah/package if applicable
         if (existing.type === 'pemasukan' && existing.jamaahId) {
+            // Calculate amounts to reverse (must match createIncome logic)
+            const grossAmount = parseFloat(existing.amount);
+            const discount = parseFloat(existing.discount || '0');
+            const netAmount = grossAmount - discount;
+
+            // Reverse the payment amounts
+            // - paidAmount: decrease by netAmount (actual money that was received)
+            // - remainingAmount: increase by grossAmount (payment + discount = total credit applied)
             await db
                 .update(jamaah)
                 .set({
-                    paidAmount: sql`GREATEST(${jamaah.paidAmount} - ${existing.amount}, 0)`,
-                    remainingAmount: sql`${jamaah.remainingAmount} + ${existing.amount}`,
+                    paidAmount: sql`GREATEST(${jamaah.paidAmount} - ${netAmount}, 0)`,
+                    remainingAmount: sql`${jamaah.remainingAmount} + ${grossAmount}`,
                     updatedAt: new Date(),
                 })
                 .where(eq(jamaah.id, existing.jamaahId));
+
+            // Recalculate payment status after deletion
+            const [j] = await db.select().from(jamaah).where(eq(jamaah.id, existing.jamaahId));
+            if (j) {
+                let newStatus = 'pending';
+                const remaining = parseFloat(j.remainingAmount || '0');
+                const paid = parseFloat(j.paidAmount);
+                const total = parseFloat(j.totalAmount);
+
+                if (remaining <= 0 || paid >= total) {
+                    newStatus = 'lunas';
+                } else if (paid > 0 && paid < total * 0.3) {
+                    newStatus = 'dp';
+                } else if (paid >= total * 0.3) {
+                    newStatus = 'cicilan';
+                }
+
+                await db
+                    .update(jamaah)
+                    .set({ paymentStatus: newStatus as any })
+                    .where(eq(jamaah.id, existing.jamaahId));
+            }
         }
 
         if (existing.type === 'pengeluaran' && existing.packageId) {
@@ -433,5 +493,81 @@ export const transactionService = {
             package: row.package,
             vendor: row.vendor,
         }));
+    },
+
+    /**
+     * Create invoice from income transaction
+     */
+    async createInvoiceFromTransaction(
+        data: {
+            jamaahId: string;
+            packageId: string;
+            subtotal: string;
+            discount: string;
+            total: string;
+            transactionId: string;
+            incomeCategory: string;
+            description?: string;
+        },
+        userId: string
+    ) {
+        // Generate invoice number: INV-YYYYMM-XXXXX
+        const now = new Date();
+        const yearMonth = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}`;
+        const randomSuffix = Math.random().toString(36).substring(2, 7).toUpperCase();
+        const invoiceNumber = `INV-${yearMonth}-${randomSuffix}`;
+
+        // Fetch package info for invoice item description
+        const [packageInfo] = await db.select().from(packages).where(eq(packages.id, data.packageId));
+        const packageName = packageInfo?.name || 'Paket';
+
+        // Map income category to description
+        const categoryLabels: Record<string, string> = {
+            dp: 'Down Payment (DP)',
+            cicilan: 'Pembayaran Cicilan',
+            pelunasan: 'Pelunasan',
+            lainnya: 'Pembayaran Lainnya',
+        };
+
+        const categoryLabel = categoryLabels[data.incomeCategory] || 'Pembayaran';
+        const itemDescription = data.description
+            ? `${packageName} - ${data.description}`
+            : `${packageName} - ${categoryLabel}`;
+
+        // Create invoice
+        const [newInvoice] = await db
+            .insert(invoices)
+            .values({
+                invoiceNumber,
+                jamaahId: data.jamaahId,
+                packageId: data.packageId,
+                subtotal: data.subtotal,
+                discount: data.discount,
+                total: data.total,
+                status: 'paid',
+                issueDate: now,
+                paidDate: now,
+                createdById: userId,
+            })
+            .returning();
+
+        // Create invoice item with package name
+        await db.insert(invoiceItems).values({
+            invoiceId: newInvoice.id,
+            description: itemDescription,
+            quantity: '1',
+            unitPrice: data.subtotal,
+            amount: data.total,
+        });
+
+        // Create notification for invoice
+        await notificationService.createForAllUsers({
+            title: 'Invoice Dibuat',
+            message: `Invoice ${invoiceNumber} telah dibuat otomatis`,
+            type: 'info',
+            link: '/laporan/invoice',
+        });
+
+        return newInvoice;
     },
 };

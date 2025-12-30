@@ -72,10 +72,13 @@ export function useCreatePackage(options = {}) {
 
     return useMutation({
         mutationFn: (data) => packageService.create(data),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: packageKeys.lists() });
-        },
         ...options,
+        onSuccess: (...args) => {
+            queryClient.invalidateQueries({ queryKey: packageKeys.lists() });
+            if (options.onSuccess) {
+                options.onSuccess(...args);
+            }
+        },
     });
 }
 
@@ -87,12 +90,15 @@ export function useUpdatePackage(options = {}) {
 
     return useMutation({
         mutationFn: ({ id, data }) => packageService.update(id, data),
-        onSuccess: (_, { id }) => {
+        ...options,
+        onSuccess: (_, { id }, ...args) => {
             queryClient.invalidateQueries({ queryKey: packageKeys.lists() });
             queryClient.invalidateQueries({ queryKey: packageKeys.detail(id) });
             queryClient.invalidateQueries({ queryKey: packageKeys.summary(id) });
+            if (options.onSuccess) {
+                options.onSuccess(_, { id }, ...args);
+            }
         },
-        ...options,
     });
 }
 
@@ -104,9 +110,12 @@ export function useDeletePackage(options = {}) {
 
     return useMutation({
         mutationFn: (id) => packageService.remove(id),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: packageKeys.lists() });
-        },
         ...options,
+        onSuccess: (...args) => {
+            queryClient.invalidateQueries({ queryKey: packageKeys.lists() });
+            if (options.onSuccess) {
+                options.onSuccess(...args);
+            }
+        },
     });
 }

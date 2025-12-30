@@ -164,6 +164,35 @@ router.post(
 );
 
 /**
+ * PUT /jamaah/bulk-update
+ * Bulk update jamaah (MUST be defined before /:id route)
+ */
+const bulkUpdateSchema = z.object({
+    updates: z.array(z.object({
+        id: z.string(),
+        data: updateJamaahSchema
+    }))
+});
+
+router.put(
+    '/bulk-update',
+    requireRole('admin', 'owner'),
+    validateBody(bulkUpdateSchema),
+    asyncHandler(async (req, res) => {
+        const success = await jamaahService.bulkUpdate(req.body.updates, req.user!.id);
+
+        if (!success) {
+            throw new ApiError(500, 'Failed to perform bulk update');
+        }
+
+        res.json({
+            success: true,
+            message: 'Jamaah bulk updated successfully',
+        });
+    })
+);
+
+/**
  * PUT /jamaah/:id
  * Update a jamaah
  */
@@ -203,35 +232,6 @@ router.delete(
         res.json({
             success: true,
             message: 'Jamaah deleted successfully',
-        });
-    })
-);
-
-/**
- * PUT /jamaah/bulk-update
- * Bulk update jamaah
- */
-const bulkUpdateSchema = z.object({
-    updates: z.array(z.object({
-        id: z.string(),
-        data: updateJamaahSchema
-    }))
-});
-
-router.put(
-    '/bulk-update',
-    requireRole('admin', 'owner'),
-    validateBody(bulkUpdateSchema),
-    asyncHandler(async (req, res) => {
-        const success = await jamaahService.bulkUpdate(req.body.updates, req.user!.id);
-
-        if (!success) {
-            throw new ApiError(500, 'Failed to perform bulk update');
-        }
-
-        res.json({
-            success: true,
-            message: 'Jamaah bulk updated successfully',
         });
     })
 );
