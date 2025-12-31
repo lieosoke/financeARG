@@ -1,1 +1,1 @@
-ALTER TABLE "transactions" ADD COLUMN "discount" numeric(15, 2) DEFAULT '0';
+-- ALTER TABLE "transactions" ADD COLUMN "discount" numeric(15, 2) DEFAULT '0';

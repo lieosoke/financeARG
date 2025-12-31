@@ -35,6 +35,10 @@ const createJamaahSchema = z.object({
     phone: z.string().optional(),
     email: z.string().email().optional(),
     address: z.string().optional(),
+    province: z.string().optional(),
+    regency: z.string().optional(),
+    district: z.string().optional(),
+    village: z.string().optional(),
     emergencyContactName: z.string().optional(),
     emergencyContactPhone: z.string().optional(),
     emergencyContactRelation: z.string().optional(),
@@ -96,6 +100,25 @@ router.get(
         res.json({
             success: true,
             ...result,
+        });
+    })
+);
+
+/**
+ * POST /jamaah/recalculate-payments
+ * Recalculate all jamaah payment data based on transaction history
+ * This fixes incorrect paidAmount, remainingAmount, and paymentStatus
+ */
+router.post(
+    '/recalculate-payments',
+    requireRole('admin', 'owner'),
+    asyncHandler(async (req, res) => {
+        const result = await jamaahService.recalculateAllPayments();
+
+        res.json({
+            success: true,
+            message: `Successfully recalculated ${result.updated} jamaah payment records`,
+            data: result,
         });
     })
 );

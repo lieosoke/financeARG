@@ -289,20 +289,21 @@ const Dashboard = () => {
                                             </span>
                                         </td>
                                         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-200 font-medium">
-                                            {transaction.jamaahName || transaction.vendorName || '-'}
+                                            {transaction.jamaah?.name || transaction.vendor?.name || '-'}
                                         </td>
                                         <td className="px-4 py-4 whitespace-nowrap">
                                             <span className="px-2 py-0.5 text-xs font-medium bg-surface-glass rounded text-gray-400">
-                                                {transaction.packageCode || '-'}
+                                                {transaction.package?.code || '-'}
                                             </span>
                                         </td>
                                         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-400">
                                             {transaction.incomeCategory || transaction.expenseCategory || '-'}
                                         </td>
                                         <td className="px-4 py-4 whitespace-nowrap text-sm text-right font-tabular font-semibold">
-                                            <span className={transaction.type === 'pemasukan' ? 'text-emerald-400' : 'text-rose-400'}>
-                                                {transaction.type === 'pemasukan' ? '+' : '-'} {formatCurrency(parseFloat(transaction.amount) || 0)}
-                                            </span>
+                                            <div className={`flex items-center justify-end gap-1 ${transaction.type === 'pemasukan' ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                                <span>{transaction.type === 'pemasukan' ? '+' : '-'}</span>
+                                                <span>Rp {formatCurrency(Math.abs(parseFloat(transaction.amount) || 0), false)}</span>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}

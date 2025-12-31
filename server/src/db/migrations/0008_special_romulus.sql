@@ -1,0 +1,4 @@
+-- ALTER TABLE "jamaah" ADD COLUMN "province" text;--> statement-breakpoint
+-- ALTER TABLE "jamaah" ADD COLUMN "regency" text;--> statement-breakpoint
+-- ALTER TABLE "jamaah" ADD COLUMN "district" text;--> statement-breakpoint
+-- ALTER TABLE "jamaah" ADD COLUMN "village" text;

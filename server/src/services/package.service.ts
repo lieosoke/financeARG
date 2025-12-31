@@ -58,13 +58,7 @@ export const packageService = {
                 const [jamaahCount] = await db
                     .select({ count: count() })
                     .from(jamaah)
-                    .where(
-                        and(
-                            eq(jamaah.packageId, pkg.id),
-                            eq(jamaah.isActive, true),
-                            eq(jamaah.isCancelled, false)
-                        )
-                    );
+                    .where(eq(jamaah.packageId, pkg.id));
 
                 return {
                     ...pkg,

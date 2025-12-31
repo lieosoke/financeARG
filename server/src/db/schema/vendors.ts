@@ -16,7 +16,7 @@ export const vendors = pgTable('vendors', {
     bankAccountHolder: text('bank_account_holder'),
     npwp: text('npwp'), // Tax ID
     notes: text('notes'),
-    isActive: boolean('is_active').default(true),
+    // isActive: boolean('is_active').default(true), // Removed for hard delete
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });

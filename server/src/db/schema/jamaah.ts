@@ -43,6 +43,12 @@ export const jamaah = pgTable('jamaah', {
     email: text('email'),
     address: text('address'),
 
+    // Indonesian Region Data
+    province: text('province'),        // Provinsi
+    regency: text('regency'),          // Kabupaten/Kota
+    district: text('district'),        // Kecamatan
+    village: text('village'),          // Kelurahan/Desa
+
     // Emergency Contact
     emergencyContactName: text('emergency_contact_name'),
     emergencyContactPhone: text('emergency_contact_phone'),
@@ -64,7 +70,7 @@ export const jamaah = pgTable('jamaah', {
     roomMate: text('room_mate'), // Name of room mate
 
     // Status flags
-    isActive: boolean('is_active').default(true),
+    // isActive: boolean('is_active').default(true), // Removed for hard delete
     isCancelled: boolean('is_cancelled').default(false),
     cancellationReason: text('cancellation_reason'),
     notes: text('notes'),

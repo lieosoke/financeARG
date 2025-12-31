@@ -28,9 +28,6 @@ export const vendorService = {
         if (filters.type) {
             conditions.push(eq(vendors.type, filters.type));
         }
-        if (filters.isActive !== undefined) {
-            conditions.push(eq(vendors.isActive, filters.isActive));
-        }
         if (filters.search) {
             conditions.push(
                 sql`(${vendors.name} ILIKE ${`%${filters.search}%`} OR ${vendors.contactPerson} ILIKE ${`%${filters.search}%`})`
@@ -126,10 +123,7 @@ export const vendorService = {
         const existing = await this.getById(id);
         if (!existing) return false;
 
-        await db
-            .update(vendors)
-            .set({ isActive: false, updatedAt: new Date() })
-            .where(eq(vendors.id, id));
+        await db.delete(vendors).where(eq(vendors.id, id));
 
         await auditService.log({
             userId,

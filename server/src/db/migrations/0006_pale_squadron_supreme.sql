@@ -1,2 +1,2 @@
-ALTER TYPE "public"."expense_category" ADD VALUE 'visa' BEFORE 'muthawif';--> statement-breakpoint
-ALTER TYPE "public"."expense_category" ADD VALUE 'handling' BEFORE 'muthawif';
+-- ALTER TYPE "public"."expense_category" ADD VALUE 'visa' BEFORE 'muthawif';--> statement-breakpoint
+-- ALTER TYPE "public"."expense_category" ADD VALUE 'handling' BEFORE 'muthawif';

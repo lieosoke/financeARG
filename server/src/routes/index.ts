@@ -9,6 +9,7 @@ import reportRoutes from './report.routes';
 import userRoutes from './user.routes';
 import companyRoutes from './company.routes';
 import notificationRoutes from './notification.routes';
+import regionRoutes from './region.routes';
 
 const router = Router();
 
@@ -32,6 +33,7 @@ router.use('/laporan', reportRoutes);
 router.use('/users', userRoutes);
 router.use('/company', companyRoutes);
 router.use('/notifications', notificationRoutes);
+router.use('/regions', regionRoutes);
 
 export default router;
 

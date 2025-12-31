@@ -61,8 +61,6 @@ export const AuthProvider = ({ children }) => {
 
             // Refresh session after login
             await checkSession();
-            // Note: checkSession's finally block will set loading to false
-            setLoading(false);
             return { success: true, user: result.data?.user };
         } catch (err) {
             setLoading(false);

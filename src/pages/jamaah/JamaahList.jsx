@@ -8,6 +8,7 @@ import Input from '../../components/atoms/Input';
 import Badge from '../../components/atoms/Badge';
 import { formatCurrency } from '../../utils/formatters';
 import { useJamaahList, useJamaahStats, useDeleteJamaah } from '../../hooks/useJamaah';
+import { jamaahService } from '../../services/api/index';
 import { usePackages } from '../../hooks/usePackages';
 import { ViewJamaahModal } from '../../components/modals';
 
@@ -59,6 +60,20 @@ const JamaahList = () => {
     // Extract data with fallbacks
     const jamaahList = jamaahData?.data || [];
     const pagination = jamaahData?.pagination || { page: 1, limit: 10, total: 0, totalPages: 1 };
+
+    // Client-side filtering (Moved up for handlers)
+    const filteredJamaahList = useMemo(() => {
+        if (!filterDepartureDate) return jamaahList;
+        return jamaahList.filter(j => {
+            if (!j.package?.departureDate) return false;
+            const date = new Date(j.package.departureDate);
+            if (isNaN(date.getTime())) return false; // Handle invalid dates safely
+            const depDate = date.toISOString().slice(0, 10);
+            return depDate === filterDepartureDate;
+        });
+    }, [jamaahList, filterDepartureDate]);
+
+    const packagesList = packagesData?.data || [];
 
     // Stats Logic
     const rawStats = statsData?.data || {};
@@ -135,43 +150,93 @@ const JamaahList = () => {
     };
 
     // Export Logic
-    const handleExportCSV = () => {
-        if (jamaahList.length === 0) {
-            toast.error('Tidak ada data untuk diekspor');
-            return;
+    const handleExportCSV = async () => {
+        try {
+            const toastId = toast.loading('Sedang menyiapkan data export...');
+
+            // Fetch all data matching current filters but without pagination limit
+            const exportParams = {
+                ...queryParams,
+                limit: 10000, // Fetch all (up to reasonable limit)
+                page: 1
+            };
+
+            const response = await jamaahService.getAll(exportParams);
+            const exportData = response.data || [];
+
+            if (exportData.length === 0) {
+                toast.error('Tidak ada data untuk diekspor', { id: toastId });
+                return;
+            }
+
+            const headers = [
+                'No',
+                'Nama',
+                'NIK',
+                'Jenis Kelamin',
+                'Tanggal Lahir',
+                'Umur',
+                'Status Pernikahan',
+                'Kontak',
+                'Alamat'
+            ];
+
+            // Helper function to calculate age
+            const calculateAge = (birthDate) => {
+                if (!birthDate || isNaN(new Date(birthDate).getTime())) return '-';
+                const today = new Date();
+                const birth = new Date(birthDate);
+                let age = today.getFullYear() - birth.getFullYear();
+                const monthDiff = today.getMonth() - birth.getMonth();
+                if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+                    age--;
+                }
+                return age;
+            };
+
+            // Helper to format marital status
+            const formatMaritalStatus = (status) => {
+                const statusMap = {
+                    'single': 'Belum Menikah',
+                    'married': 'Menikah',
+                    'divorced': 'Cerai',
+                    'widowed': 'Janda/Duda'
+                };
+                return statusMap[status] || status || '-';
+            };
+
+            const rows = exportData.map((j, i) => [
+                i + 1,
+                `"${j.name}"`,
+                `'${j.nik || '-'}'`,
+                j.gender === 'male' ? 'Laki-laki' : j.gender === 'female' ? 'Perempuan' : '-',
+                j.dateOfBirth && !isNaN(new Date(j.dateOfBirth).getTime()) ? new Date(j.dateOfBirth).toLocaleDateString('id-ID') : '-',
+                calculateAge(j.dateOfBirth),
+                formatMaritalStatus(j.maritalStatus),
+                `'${j.phone || '-'}'`,
+                `"${(j.address || '-').replace(/"/g, '""').replace(/\n/g, ' ')}"`
+            ]);
+
+            const csvContent = [
+                headers.join(','),
+                ...rows.map(row => row.join(','))
+            ].join('\n');
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', `data_jamaah_full_${new Date().toISOString().slice(0, 10)}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            toast.success('Data berhasil diekspor ke CSV', { id: toastId });
+        } catch (error) {
+            console.error('Export error:', error);
+            toast.error('Gagal mengekspor data', { id: toastId });
         }
-
-        const headers = ['No', 'Nama', 'NIK', 'Telepon', 'Email', 'Alamat', 'Paket', 'Status Pembayaran', 'Total', 'Dibayar', 'Sisa'];
-        const rows = filteredJamaahList.map((j, i) => [
-            i + 1,
-            j.name,
-            j.nik || '-',
-            j.phone || '-',
-            j.email || '-',
-            (j.address || '-').replace(/,/g, ';'),
-            j.package?.name || j.packageName || '-',
-            j.paymentStatus,
-            parseFloat(j.totalAmount) || 0,
-            parseFloat(j.paidAmount) || 0,
-            parseFloat(j.remainingAmount) || 0
-        ]);
-
-        const csvContent = [
-            headers.join(','),
-            ...rows.map(row => row.join(','))
-        ].join('\n');
-
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.setAttribute('href', url);
-        link.setAttribute('download', `data_jamaah_${new Date().toISOString().slice(0, 10)}.csv`);
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-
-        toast.success('Data berhasil diekspor ke CSV');
     };
 
     const handlePrint = () => {
@@ -191,17 +256,8 @@ const JamaahList = () => {
         toast.info('Gunakan opsi "Save as PDF" di dialog print');
     };
 
-    // Client-side filtering
-    const filteredJamaahList = useMemo(() => {
-        if (!filterDepartureDate) return jamaahList;
-        return jamaahList.filter(j => {
-            if (!j.package?.departureDate) return false;
-            const depDate = new Date(j.package.departureDate).toISOString().slice(0, 10);
-            return depDate === filterDepartureDate;
-        });
-    }, [jamaahList, filterDepartureDate]);
+    // (Moved filteredJamaahList to top)
 
-    const packagesList = packagesData?.data || [];
 
     if (error) {
         return (
@@ -223,32 +279,106 @@ const JamaahList = () => {
         <div className="space-y-6 animate-fade-in pb-10">
             {/* Print Styles */}
             <style>{`
-                @media print {
-                    @page { size: A4 landscape; margin: 15mm; }
-                    .no-print, button, nav, aside { display: none !important; }
-                    body * { visibility: hidden; }
-                    .space-y-6, .space-y-6 * { visibility: visible; }
-                    .space-y-6 { position: absolute; left: 0; top: 0; width: 100%; background: white !important; color: black !important; padding: 20px; }
-                    .page-header { margin-bottom: 20px !important; }
-                    .print-table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 10px; }
-                    .print-table th, .print-table td { border: 1px solid #ccc; padding: 6px; text-align: left; color: black; }
-                    .print-table th { background: #eee; font-weight: bold; }
-                     /* Hide action column in print */
-                     td:last-child, th:last-child { display: none !important; }
+            @media print {
+                @page { size: A4 landscape; margin: 10mm; }
+
+                /* Reset main container styles */
+                html, body {
+                    height: auto !important;
+                    overflow: visible !important;
+                    background-color: white !important;
                 }
+
+                /* Hide everything by default */
+                body * {
+                    visibility: hidden;
+                }
+
+                /* Explicitly hide common UI elements */
+                .no-print, nav, aside, .page-header, .stats-overview,
+                .filter-toolbar, .filter-panel, .pagination-footer,
+                header, footer, [role="dialog"], button {
+                    display: none !important;
+                }
+
+                /* Make print area visible and position it */
+                .print-area, .print-area * {
+                    visibility: visible !important;
+                    color: black !important;
+                    background-color: transparent !important;
+                }
+
+                .print-area {
+                    display: block !important;
+                    position: absolute !important;
+                    left: 0 !important;
+                    top: 0 !important;
+                    width: 100% !important;
+                    margin: 0 !important;
+                    padding: 10px !important;
+                    background-color: white !important;
+                }
+
+                /* Hide screen-only table */
+                .no-print {
+                    display: none !important;
+                }
+
+                /* Show print-only table */
+                .print-table {
+                    display: table !important;
+                    width: 100% !important;
+                    border-collapse: collapse !important;
+                    font-size: 9pt;
+                    font-family: Arial, sans-serif;
+                }
+
+                .print-table th, .print-table td {
+                    border: 1px solid #000 !important;
+                    padding: 6px 8px;
+                    text-align: left;
+                }
+
+                .print-table th {
+                    background-color: #f0f0f0 !important;
+                    font-weight: bold;
+                    text-transform: uppercase;
+                    font-size: 8pt;
+                    -webkit-print-color-adjust: exact !important;
+                    print-color-adjust: exact !important;
+                }
+
+                .print-title {
+                    display: block !important;
+                    text-align: center;
+                    font-size: 14pt;
+                    font-weight: bold;
+                    margin-bottom: 15px;
+                }
+
+                /* Ensure background graphics are forced */
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+
+            /* Hide print-only elements on screen */
+            @media screen {
+                .print-table {
+                    display: none !important;
+                }
+                .print-title {
+                    display: none !important;
+                }
+            }
             `}</style>
 
             {/* Header & Actions */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="page-header flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-white tracking-tight">Data Jamaah</h1>
                     <p className="text-gray-400 text-sm mt-1">Kelola pendaftaran dan status pembayaran</p>
                 </div>
                 <div className="flex items-center gap-3">
-                    <div className="hidden md:flex gap-2">
-                        <Button variant="secondary" size="sm" icon={<Printer className="w-4 h-4" />} onClick={handlePrint} />
-                        <Button variant="secondary" size="sm" icon={<FileSpreadsheet className="w-4 h-4" />} onClick={handleExportCSV} />
-                    </div>
                     <Link to="/jamaah/baru">
                         <Button icon={<Plus className="w-4 h-4" />}>Jamaah Baru</Button>
                     </Link>
@@ -256,7 +386,7 @@ const JamaahList = () => {
             </div>
 
             {/* Stats Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="stats-overview grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <Card className="!p-4 bg-gradient-to-br from-emerald-900/40 to-emerald-900/10 border-emerald-500/20">
                     <div className="flex items-center gap-4">
                         <div className="p-3 bg-emerald-500/10 rounded-xl">
@@ -306,7 +436,7 @@ const JamaahList = () => {
             {/* Filters & Table Section */}
             <Card className="overflow-hidden">
                 {/* Search & Toolbar */}
-                <div className="p-4 border-b border-surface-border flex flex-col lg:flex-row gap-4 justify-between lg:items-center">
+                <div className="filter-toolbar p-4 border-b border-surface-border flex flex-col lg:flex-row gap-4 justify-between lg:items-center">
                     <div className="relative max-w-md w-full">
                         <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                         <input
@@ -341,12 +471,15 @@ const JamaahList = () => {
                         >
                             <Filter className="w-4 h-4" />
                         </Button>
+                        <div className="h-6 w-px bg-surface-border mx-1" />
+                        <Button variant="secondary" size="sm" className="!p-2.5" icon={<Printer className="w-4 h-4" />} onClick={handlePrint} title="Print Data" />
+                        <Button variant="secondary" size="sm" className="!p-2.5" icon={<FileSpreadsheet className="w-4 h-4" />} onClick={handleExportCSV} title="Export CSV" />
                     </div>
                 </div>
 
                 {/* Advanced Filters Panel */}
                 {showFilters && (
-                    <div className="p-4 bg-dark-tertiary/30 border-b border-surface-border grid grid-cols-1 md:grid-cols-3 gap-4 animate-slide-down">
+                    <div className="filter-panel p-4 bg-dark-tertiary/30 border-b border-surface-border grid grid-cols-1 md:grid-cols-3 gap-4 animate-slide-down">
                         <div>
                             <label className="text-xs font-medium text-gray-400 mb-1.5 block">Paket Umrah/Haji</label>
                             <select
@@ -396,8 +529,10 @@ const JamaahList = () => {
                         </p>
                     </div>
                 ) : (
-                    <div className="overflow-x-auto">
-                        <table className="w-full print-table no-print-borders">
+                    <div className="overflow-x-auto print-area">
+                        <h2 className="hidden print:block text-xl font-bold mb-4">Data Jamaah</h2>
+                        {/* Main Table (Screen view) */}
+                        <table className="w-full no-print">
                             <thead className="bg-dark-tertiary border-b border-surface-border">
                                 <tr>
                                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Jamaah Info</th>
@@ -474,11 +609,67 @@ const JamaahList = () => {
                                 })}
                             </tbody>
                         </table>
+
+                        {/* Print-only Table with simplified columns */}
+                        <table className="print-table hidden print:table">
+                            <thead>
+                                <tr>
+                                    <th>No</th>
+                                    <th>Nama</th>
+                                    <th>NIK</th>
+                                    <th>Jenis Kelamin</th>
+                                    <th>Tanggal Lahir</th>
+                                    <th>Umur</th>
+                                    <th>Status Pernikahan</th>
+                                    <th>Kontak</th>
+                                    <th>Alamat</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filteredJamaahList.map((jamaah, index) => {
+                                    // Calculate age
+                                    const calculateAge = (birthDate) => {
+                                        if (!birthDate || isNaN(new Date(birthDate).getTime())) return '-';
+                                        const today = new Date();
+                                        const birth = new Date(birthDate);
+                                        let age = today.getFullYear() - birth.getFullYear();
+                                        const monthDiff = today.getMonth() - birth.getMonth();
+                                        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+                                            age--;
+                                        }
+                                        return age;
+                                    };
+                                    // Format marital status
+                                    const formatMaritalStatus = (status) => {
+                                        const statusMap = {
+                                            'single': 'Belum Menikah',
+                                            'married': 'Menikah',
+                                            'divorced': 'Cerai',
+                                            'widowed': 'Janda/Duda'
+                                        };
+                                        return statusMap[status] || status || '-';
+                                    };
+                                    return (
+                                        <tr key={jamaah.id}>
+                                            <td>{index + 1}</td>
+                                            <td>{jamaah.name}</td>
+                                            <td>{jamaah.nik || '-'}</td>
+                                            <td>{jamaah.gender === 'male' ? 'Laki-laki' : jamaah.gender === 'female' ? 'Perempuan' : '-'}</td>
+                                            <td>{jamaah.dateOfBirth && !isNaN(new Date(jamaah.dateOfBirth).getTime()) ? new Date(jamaah.dateOfBirth).toLocaleDateString('id-ID') : '-'}</td>
+                                            <td>{calculateAge(jamaah.dateOfBirth)}</td>
+                                            <td>{formatMaritalStatus(jamaah.maritalStatus)}</td>
+                                            <td>{jamaah.phone || '-'}</td>
+                                            <td>{jamaah.address || '-'}</td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
                     </div>
                 )}
 
                 {/* Footer / Pagination */}
-                <div className="px-6 py-4 border-t border-surface-border bg-dark-tertiary/20 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="pagination-footer px-6 py-4 border-t border-surface-border bg-dark-tertiary/20 flex flex-col sm:flex-row items-center justify-between gap-4">
                     <p className="text-sm text-gray-500">
                         Showing <span className="font-medium text-white">{filteredJamaahList.length}</span> of <span className="font-medium text-white">{pagination.total}</span> entries
                     </p>
@@ -516,7 +707,7 @@ const JamaahList = () => {
                 onClose={() => { setShowViewModal(false); setSelectedJamaah(null); }}
                 data={selectedJamaah}
             />
-        </div>
+        </div >
     );
 };
 

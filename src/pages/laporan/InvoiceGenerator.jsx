@@ -77,6 +77,7 @@ const InvoiceGenerator = () => {
                 city: companySettingsData.data.city || DEFAULT_COMPANY_INFO.city,
                 phone: companySettingsData.data.phone || DEFAULT_COMPANY_INFO.phone,
                 email: companySettingsData.data.email || DEFAULT_COMPANY_INFO.email,
+                bankAccounts: companySettingsData.data.bankAccounts || [],
             };
         }
         return DEFAULT_COMPANY_INFO;
@@ -255,8 +256,12 @@ const InvoiceGenerator = () => {
                     const payments = transformPayments(items.data);
                     const totalDiscount = payments.reduce((sum, p) => sum + p.discount, 0);
 
+                    const jamaahPrint = prepareJamaahForPrint(jamaahRaw);
+                    // Sisa is now correct from DB (Total Value = Cash + Discount reduces debt)
+                    // No need to manually subtract discount here
+
                     return {
-                        jamaah: prepareJamaahForPrint(jamaahRaw),
+                        jamaah: jamaahPrint,
                         payments,
                         totalDiscount,
                         sender: jamaahRaw.name, // Default Sender = Jamaah
@@ -296,7 +301,7 @@ const InvoiceGenerator = () => {
         // Reuse batch logic for single print to keep template consistent
         if (!selectedJamaah) return;
 
-        // If we have the data already loaded from the hook
+        // Sisa is now correct from DB
         setBatchInvoices([{
             jamaah: selectedJamaah,
             payments: singleJamaahPayments,
@@ -542,6 +547,22 @@ const InvoiceGenerator = () => {
                                     <p style={{ fontWeight: 'bold' }}>{invoiceData.receiver || '(....................)'}</p>
                                 </div>
                             </div>
+
+                            {/* Bank Accounts */}
+                            {COMPANY_INFO.bankAccounts && COMPANY_INFO.bankAccounts.length > 0 && (
+                                <div style={{ marginTop: '10px', fontSize: '9px', borderTop: '1px dashed #ccc', paddingTop: '5px' }}>
+                                    <p style={{ fontWeight: 'bold', marginBottom: '3px' }}>Transfer melalui Rekening:</p>
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', columnGap: '15px', rowGap: '3px' }}>
+                                        {COMPANY_INFO.bankAccounts.map((acc, idx) => (
+                                            <div key={idx} style={{ display: 'flex', alignItems: 'center' }}>
+                                                <span style={{ fontWeight: 'bold', marginRight: '3px' }}>{acc.bankName}</span>
+                                                <span style={{ marginRight: '3px' }}>{acc.accountNumber}</span>
+                                                <span>(a.n {acc.accountHolder})</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     ))}
                 </div>

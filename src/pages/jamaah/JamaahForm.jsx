@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { ArrowLeft, Save, User, Phone, MapPin, CreditCard, Package, Loader2, Mail, AlertCircle, RefreshCw } from 'lucide-react';
@@ -8,8 +8,9 @@ import Button from '../../components/atoms/Button';
 import Input from '../../components/atoms/Input';
 import { usePackages } from '../../hooks/usePackages';
 import { useJamaah, useCreateJamaah, useUpdateJamaah, jamaahKeys } from '../../hooks/useJamaah';
+import { useProvinces, useRegencies, useDistricts, useVillages } from '../../hooks/useIndonesianRegions';
 import { formatCurrency } from '../../utils/formatters';
-import { formatDateToID, parseDateFromID, formatDateForAPI, calculateAge, isValidIDDate } from '../../utils/dateUtils';
+import { formatDateForInput, formatDateForAPI, calculateAge } from '../../utils/dateUtils';
 import { useQueryClient } from '@tanstack/react-query';
 
 const JamaahForm = () => {
@@ -54,15 +55,30 @@ const JamaahForm = () => {
             name: '',
             nik: '',
             gender: 'male',
-            maritalStatus: 'single',
+            maritalStatus: '',
             dateOfBirth: '',
             phone: '',
             address: '',
             email: '',
             packageId: '',
             totalAmount: '',
+            province: '',
+            regency: '',
+            district: '',
+            village: '',
         },
     });
+
+    // State for region IDs (used to fetch cascading data)
+    const [selectedProvinceId, setSelectedProvinceId] = useState('');
+    const [selectedRegencyId, setSelectedRegencyId] = useState('');
+    const [selectedDistrictId, setSelectedDistrictId] = useState('');
+
+    // Fetch Indonesian region data
+    const { data: provinces = [], isLoading: provincesLoading } = useProvinces();
+    const { data: regencies = [], isLoading: regenciesLoading } = useRegencies(selectedProvinceId);
+    const { data: districts = [], isLoading: districtsLoading } = useDistricts(selectedRegencyId);
+    const { data: villages = [], isLoading: villagesLoading } = useVillages(selectedDistrictId);
 
     // Watch dateOfBirth to calculate age
     const dateOfBirthValue = watch('dateOfBirth');
@@ -83,16 +99,48 @@ const JamaahForm = () => {
                 name: existingJamaah.name || '',
                 nik: existingJamaah.nik || '',
                 gender: existingJamaah.gender || 'male',
-                maritalStatus: existingJamaah.maritalStatus || 'single',
-                dateOfBirth: existingJamaah.dateOfBirth ? formatDateToID(existingJamaah.dateOfBirth) : '',
+                maritalStatus: existingJamaah.maritalStatus || '',
+                dateOfBirth: existingJamaah.dateOfBirth ? formatDateForInput(existingJamaah.dateOfBirth) : '',
                 phone: existingJamaah.phone || '',
                 address: existingJamaah.address || '',
                 email: existingJamaah.email || '',
                 packageId: existingJamaah.packageId || '',
                 totalAmount: existingJamaah.totalAmount || '',
+                province: existingJamaah.province || '',
+                regency: existingJamaah.regency || '',
+                district: existingJamaah.district || '',
+                village: existingJamaah.village || '',
             });
         }
     }, [existingJamaah, reset]);
+
+    // Initialize region IDs when editing existing jamaah
+    useEffect(() => {
+        if (existingJamaah && provinces.length > 0) {
+            const existingProvince = provinces.find(p => p.name === existingJamaah.province);
+            if (existingProvince && !selectedProvinceId) {
+                setSelectedProvinceId(existingProvince.id);
+            }
+        }
+    }, [existingJamaah, provinces, selectedProvinceId]);
+
+    useEffect(() => {
+        if (existingJamaah && regencies.length > 0 && selectedProvinceId) {
+            const existingRegency = regencies.find(r => r.name === existingJamaah.regency);
+            if (existingRegency && !selectedRegencyId) {
+                setSelectedRegencyId(existingRegency.id);
+            }
+        }
+    }, [existingJamaah, regencies, selectedProvinceId, selectedRegencyId]);
+
+    useEffect(() => {
+        if (existingJamaah && districts.length > 0 && selectedRegencyId) {
+            const existingDistrict = districts.find(d => d.name === existingJamaah.district);
+            if (existingDistrict && !selectedDistrictId) {
+                setSelectedDistrictId(existingDistrict.id);
+            }
+        }
+    }, [existingJamaah, districts, selectedRegencyId, selectedDistrictId]);
 
     // Fetch packages from API (only active/open packages)
     const { data: packagesData, isLoading: packagesLoading, isError: packagesError, refetch: refetchPackages } = usePackages({
@@ -113,6 +161,10 @@ const JamaahForm = () => {
             phone: data.phone || undefined,
             email: data.email || undefined,
             address: data.address || undefined,
+            province: data.province || undefined,
+            regency: data.regency || undefined,
+            district: data.district || undefined,
+            village: data.village || undefined,
             packageId: data.packageId || undefined,
             totalAmount: data.totalAmount || '0',
         };
@@ -223,8 +275,10 @@ const JamaahForm = () => {
                                     label="NIK / No. KTP"
                                     placeholder="16 digit NIK"
                                     icon={<CreditCard className="w-4 h-4" />}
+                                    required
                                     error={errors.nik?.message}
                                     {...register('nik', {
+                                        required: 'NIK wajib diisi',
                                         pattern: { value: /^\d{16}$/, message: 'NIK harus 16 digit angka' },
                                     })}
                                 />
@@ -260,16 +314,22 @@ const JamaahForm = () => {
                                 />
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-300 mb-2">Status Pernikahan</label>
+                                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                                        Status Pernikahan <span className="text-rose-400">*</span>
+                                    </label>
                                     <select
-                                        className="w-full px-4 py-2.5 rounded-lg bg-dark-tertiary border border-surface-border text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-shadow"
-                                        {...register('maritalStatus')}
+                                        className={`w-full px-4 py-2.5 rounded-lg bg-dark-tertiary border ${errors.maritalStatus ? 'border-rose-500' : 'border-surface-border'} text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-shadow`}
+                                        {...register('maritalStatus', { required: 'Status pernikahan wajib dipilih' })}
                                     >
+                                        <option value="">-- Pilih Status --</option>
                                         <option value="single">Belum Menikah</option>
                                         <option value="married">Menikah</option>
                                         <option value="divorced">Cerai Hidup</option>
                                         <option value="widowed">Cerai Mati</option>
                                     </select>
+                                    {errors.maritalStatus && (
+                                        <p className="mt-1.5 text-sm text-rose-400">{errors.maritalStatus.message}</p>
+                                    )}
                                 </div>
                             </div>
                         </Card>
@@ -278,7 +338,7 @@ const JamaahForm = () => {
                         <Card>
                             <div className="p-4 border-b border-surface-border">
                                 <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                                    <Phone className="w-5 h-5 text-amber-400" />
+                                    <MapPin className="w-5 h-5 text-amber-400" />
                                     Kontak & Alamat
                                 </h3>
                                 <p className="text-sm text-gray-400 mt-1">Informasi untuk menghubungi jamaah</p>
@@ -288,6 +348,7 @@ const JamaahForm = () => {
                                     label="Nomor Telepon / WhatsApp"
                                     placeholder="Contoh: 081234567890"
                                     icon={<Phone className="w-4 h-4" />}
+                                    required
                                     error={errors.phone?.message}
                                     {...register('phone', { required: 'Nomor telepon wajib diisi' })}
                                 />
@@ -304,11 +365,123 @@ const JamaahForm = () => {
                                         },
                                     })}
                                 />
+
+                                {/* Indonesian Region Dropdowns */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                                        Provinsi <span className="text-rose-400">*</span>
+                                    </label>
+                                    <select
+                                        className={`w-full px-4 py-2.5 rounded-lg bg-dark-tertiary border ${errors.province ? 'border-rose-500' : 'border-surface-border'} text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-shadow`}
+                                        {...register('province', { required: 'Provinsi wajib dipilih' })}
+                                        value={watch('province') || ''}
+                                        onChange={(e) => {
+                                            const selected = provinces.find(p => p.name === e.target.value);
+                                            setValue('province', e.target.value, { shouldValidate: true, shouldDirty: true });
+                                            setSelectedProvinceId(selected?.id || '');
+                                            // Reset child selections
+                                            setValue('regency', '', { shouldValidate: true, shouldDirty: true });
+                                            setValue('district', '', { shouldValidate: true, shouldDirty: true });
+                                            setValue('village', '', { shouldValidate: true, shouldDirty: true });
+                                            setSelectedRegencyId('');
+                                            setSelectedDistrictId('');
+                                        }}
+                                    >
+                                        <option value="">-- Pilih Provinsi --</option>
+                                        {provincesLoading ? (
+                                            <option disabled>Memuat...</option>
+                                        ) : (
+                                            provinces.map((prov) => (
+                                                <option key={prov.id} value={prov.name}>{prov.name}</option>
+                                            ))
+                                        )}
+                                    </select>
+                                    {errors.province && (
+                                        <p className="mt-1.5 text-sm text-rose-400">{errors.province.message}</p>
+                                    )}
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-300 mb-2">Kabupaten/Kota</label>
+                                    <select
+                                        className="w-full px-4 py-2.5 rounded-lg bg-dark-tertiary border border-surface-border text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-shadow disabled:opacity-50 disabled:cursor-not-allowed"
+                                        {...register('regency')}
+                                        value={watch('regency') || ''}
+                                        disabled={!selectedProvinceId}
+                                        onChange={(e) => {
+                                            const selected = regencies.find(r => r.name === e.target.value);
+                                            setValue('regency', e.target.value, { shouldValidate: true, shouldDirty: true });
+                                            setSelectedRegencyId(selected?.id || '');
+                                            // Reset child selections
+                                            setValue('district', '', { shouldValidate: true, shouldDirty: true });
+                                            setValue('village', '', { shouldValidate: true, shouldDirty: true });
+                                            setSelectedDistrictId('');
+                                        }}
+                                    >
+                                        <option value="">-- Pilih Kabupaten/Kota --</option>
+                                        {regenciesLoading ? (
+                                            <option disabled>Memuat...</option>
+                                        ) : (
+                                            regencies.map((reg) => (
+                                                <option key={reg.id} value={reg.name}>{reg.name}</option>
+                                            ))
+                                        )}
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-300 mb-2">Kecamatan</label>
+                                    <select
+                                        className="w-full px-4 py-2.5 rounded-lg bg-dark-tertiary border border-surface-border text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-shadow disabled:opacity-50 disabled:cursor-not-allowed"
+                                        {...register('district')}
+                                        value={watch('district') || ''}
+                                        disabled={!selectedRegencyId}
+                                        onChange={(e) => {
+                                            const selected = districts.find(d => d.name === e.target.value);
+                                            setValue('district', e.target.value, { shouldValidate: true, shouldDirty: true });
+                                            setSelectedDistrictId(selected?.id || '');
+                                            // Reset child selection
+                                            setValue('village', '', { shouldValidate: true, shouldDirty: true });
+                                        }}
+                                    >
+                                        <option value="">-- Pilih Kecamatan --</option>
+                                        {districtsLoading ? (
+                                            <option disabled>Memuat...</option>
+                                        ) : (
+                                            districts.map((dist) => (
+                                                <option key={dist.id} value={dist.name}>{dist.name}</option>
+                                            ))
+                                        )}
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-300 mb-2">Kelurahan/Desa</label>
+                                    <select
+                                        className="w-full px-4 py-2.5 rounded-lg bg-dark-tertiary border border-surface-border text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-shadow disabled:opacity-50 disabled:cursor-not-allowed"
+                                        {...register('village')}
+                                        value={watch('village') || ''}
+                                        disabled={!selectedDistrictId}
+                                        onChange={(e) => {
+                                            setValue('village', e.target.value, { shouldValidate: true, shouldDirty: true });
+                                        }}
+                                    >
+                                        <option value="">-- Pilih Kelurahan/Desa --</option>
+                                        {villagesLoading ? (
+                                            <option disabled>Memuat...</option>
+                                        ) : (
+                                            villages.map((vil) => (
+                                                <option key={vil.id} value={vil.name}>{vil.name}</option>
+                                            ))
+                                        )}
+                                    </select>
+                                </div>
+
                                 <div className="md:col-span-2">
                                     <label className="block text-sm font-medium text-gray-300 mb-2">Alamat Lengkap</label>
                                     <textarea
                                         className="w-full px-4 py-3 rounded-lg bg-dark-tertiary border border-surface-border text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-shadow min-h-[100px] resize-y"
-                                        placeholder="Nama jalan, RT/RW, Kelurahan, Kecamatan, Kota/Kabupaten"
+                                        placeholder="Nama jalan, nomor rumah, RT/RW, dll"
                                         {...register('address')}
                                     />
                                 </div>

@@ -13,6 +13,11 @@ const companySettingsSchema = z.object({
     city: z.string().max(255).optional().nullable(),
     phone: z.string().max(50).optional().nullable(),
     email: z.string().email().optional().nullable().or(z.literal('')),
+    bankAccounts: z.array(z.object({
+        bankName: z.string(),
+        accountNumber: z.string(),
+        accountHolder: z.string(),
+    })).optional().nullable(),
 });
 
 /**

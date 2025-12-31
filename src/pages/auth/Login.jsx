@@ -19,7 +19,7 @@ const Login = () => {
 
     // Fetch company settings for dynamic branding
     const { data: companySettingsData } = useCompanySettings();
-    const companyName = companySettingsData?.data?.name || 'ARG Tour & TRavel';
+    const companyName = companySettingsData?.data?.name || 'Finance App';
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
@@ -35,30 +35,18 @@ const Login = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
-        // Form validation
-        if (!formData.email.trim() || !formData.password.trim()) {
-            setError('Email dan password wajib diisi');
-            return;
-        }
-
         setLoading(true);
         setError(null);
 
-        try {
-            const result = await login(formData.email.trim(), formData.password);
+        const result = await login(formData.email, formData.password);
 
-            if (result.success) {
-                navigate('/dashboard');
-            } else {
-                setError(result.error || 'Login gagal. Silakan periksa kredensial Anda.');
-            }
-        } catch (err) {
-            console.error('Login error:', err);
-            setError('Terjadi kesalahan saat login. Silakan coba lagi.');
-        } finally {
-            setLoading(false);
+        if (result.success) {
+            navigate('/dashboard');
+        } else {
+            setError(result.error || 'Login gagal. Periksa email dan password.');
         }
+
+        setLoading(false);
     };
 
     return (
@@ -90,20 +78,20 @@ const Login = () => {
                         <h1 className="text-5xl font-bold mb-4 font-display">
                             {companyName}
                         </h1>
-                        <p className="text-xl mb-2 text-primary-300 font-medium">Dashboard Keuangan & Manajemen Jamaah</p>
+                        <p className="text-xl mb-2 text-primary-300 font-medium">Dashboard Keuangan & Manajemen</p>
                         <p className="text-lg text-gray-400">
-                            Biro Perjalanan Haji & Umroh Terpercaya
+                            Spesialis Haji & Umroh Terpercaya
                         </p>
 
                         {/* Stats */}
                         <div className="mt-16 flex items-center justify-center gap-12">
                             <div className="text-center">
-                                <div className="text-4xl font-bold text-white font-display">1000+</div>
+                                <div className="text-4xl font-bold text-white font-display">500+</div>
                                 <div className="text-sm text-gray-400 mt-1">Jamaah Terlayani</div>
                             </div>
                             <div className="w-px h-12 bg-surface-border"></div>
                             <div className="text-center">
-                                <div className="text-4xl font-bold text-white font-display">10+</div>
+                                <div className="text-4xl font-bold text-white font-display">15+</div>
                                 <div className="text-sm text-gray-400 mt-1">Tahun Pengalaman</div>
                             </div>
                         </div>
@@ -127,13 +115,11 @@ const Login = () => {
                     </div>
 
                     {/* Login Card */}
-                    <div className="bg-dark-secondary/80 backdrop-blur-xl rounded-3xl border border-surface-border p-8 shadow-glass relative">
+                    <div className="bg-dark-secondary/80 backdrop-blur-xl rounded-3xl border border-surface-border p-8 shadow-glass">
                         {/* Gradient Border Effect */}
-                        <div className="absolute inset-0 rounded-3xl pointer-events-none" style={{ position: 'absolute', zIndex: 0 }}>
-                            <div className="gradient-border" style={{ position: 'relative', width: '100%', height: '100%', borderRadius: 'inherit' }}></div>
-                        </div>
+                        <div className="absolute inset-0 rounded-3xl gradient-border pointer-events-none"></div>
 
-                        <div className="mb-8 relative" style={{ position: 'relative', zIndex: 1 }}>
+                        <div className="mb-8 relative">
                             <h2 className="text-3xl font-bold text-white mb-2 font-display">Selamat Datang</h2>
                             <p className="text-gray-400">Silakan login untuk melanjutkan</p>
                         </div>
@@ -146,7 +132,7 @@ const Login = () => {
                             </div>
                         )}
 
-                        <form onSubmit={handleSubmit} className="space-y-5 relative" style={{ position: 'relative', zIndex: 1 }}>
+                        <form onSubmit={handleSubmit} className="space-y-5 relative">
                             <Input
                                 label="Email"
                                 type="email"
@@ -202,6 +188,8 @@ const Login = () => {
                                 <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
                             </Button>
                         </form>
+
+
 
                         <div className="mt-8 text-center relative">
                             <p className="text-sm text-gray-500">

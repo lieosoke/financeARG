@@ -123,10 +123,12 @@ export const transactionService = {
      * Create income transaction
      */
     async createIncome(data: NewTransaction & { discount?: string }, userId: string): Promise<Transaction> {
-        // Calculate net amount after discount
-        const grossAmount = parseFloat(data.amount);
+        // amount = actual cash/transfer received
+        // discount = absolute price reduction (reduces debt without cash)
+        const cashReceived = parseFloat(data.amount);
         const discount = parseFloat(data.discount || '0');
-        const netAmount = grossAmount - discount;
+        // Total debt reduction = cash received + discount
+        const totalDebtReduction = cashReceived + discount;
 
         // Convert transactionDate string to Date object
         const processedData: any = {
@@ -145,15 +147,15 @@ export const transactionService = {
             .returning();
 
         // Update jamaah payment if linked
-        // - paidAmount: increases by netAmount (actual money received)
-        // - remainingAmount: decreases by grossAmount (payment + discount = total credit applied)
-        // This ensures discount reduces what jamaah owes, not counted as debt
+        // - paidAmount: increases by cashReceived (actual money received)
+        // - remainingAmount: decreases by totalDebtReduction (cash + discount)
+        // This ensures discount acts as absolute price reduction
         if (data.jamaahId) {
             await db
                 .update(jamaah)
                 .set({
-                    paidAmount: sql`${jamaah.paidAmount} + ${netAmount}`,
-                    remainingAmount: sql`${jamaah.remainingAmount} - ${grossAmount}`,
+                    paidAmount: sql`${jamaah.paidAmount} + ${cashReceived}`,
+                    remainingAmount: sql`${jamaah.remainingAmount} - ${totalDebtReduction}`,
                     updatedAt: new Date(),
                 })
                 .where(eq(jamaah.id, data.jamaahId));
@@ -161,12 +163,12 @@ export const transactionService = {
             // Update payment status based on remaining amount
             const [j] = await db.select().from(jamaah).where(eq(jamaah.id, data.jamaahId));
             if (j) {
-                let newStatus = 'cicilan';
+                let newStatus = 'pending';
                 const remaining = parseFloat(j.remainingAmount || '0');
                 const paid = parseFloat(j.paidAmount);
                 const total = parseFloat(j.totalAmount);
 
-                if (remaining <= 0) {
+                if (remaining <= 0 || paid >= total) {
                     newStatus = 'lunas';
                 } else if (paid > 0 && paid < total * 0.3) {
                     newStatus = 'dp';
@@ -187,9 +189,9 @@ export const transactionService = {
                 await this.createInvoiceFromTransaction({
                     jamaahId: data.jamaahId,
                     packageId: data.packageId,
-                    subtotal: data.amount,
+                    subtotal: String(totalDebtReduction),
                     discount: data.discount || '0',
-                    total: String(netAmount),
+                    total: data.amount,
                     transactionId: newTransaction.id,
                     incomeCategory: data.incomeCategory || 'lainnya',
                     description: data.description || undefined,
@@ -214,7 +216,7 @@ export const transactionService = {
         const jamaahInfo = data.jamaahId
             ? await db.select().from(jamaah).where(eq(jamaah.id, data.jamaahId)).then(r => r[0])
             : null;
-        const formattedAmount = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(netAmount);
+        const formattedAmount = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(cashReceived);
 
         await notificationService.createForAllUsers({
             title: 'Pembayaran Masuk',
@@ -327,18 +329,19 @@ export const transactionService = {
         // Reverse the effects on jamaah/package if applicable
         if (existing.type === 'pemasukan' && existing.jamaahId) {
             // Calculate amounts to reverse (must match createIncome logic)
-            const grossAmount = parseFloat(existing.amount);
+            // amount = actual cash received, discount = price reduction
+            const cashReceived = parseFloat(existing.amount);
             const discount = parseFloat(existing.discount || '0');
-            const netAmount = grossAmount - discount;
+            const totalDebtReduction = cashReceived + discount;
 
             // Reverse the payment amounts
-            // - paidAmount: decrease by netAmount (actual money that was received)
-            // - remainingAmount: increase by grossAmount (payment + discount = total credit applied)
+            // - paidAmount: decrease by cashReceived (actual money that was received)
+            // - remainingAmount: increase by totalDebtReduction (cash + discount)
             await db
                 .update(jamaah)
                 .set({
-                    paidAmount: sql`GREATEST(${jamaah.paidAmount} - ${netAmount}, 0)`,
-                    remainingAmount: sql`${jamaah.remainingAmount} + ${grossAmount}`,
+                    paidAmount: sql`GREATEST(${jamaah.paidAmount} - ${cashReceived}, 0)`,
+                    remainingAmount: sql`${jamaah.remainingAmount} + ${totalDebtReduction}`,
                     updatedAt: new Date(),
                 })
                 .where(eq(jamaah.id, existing.jamaahId));

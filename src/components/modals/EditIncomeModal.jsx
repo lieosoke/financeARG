@@ -45,9 +45,13 @@ const EditIncomeModal = ({ isOpen, onClose, initialData }) => {
 
     useEffect(() => {
         if (isOpen && initialData) {
+            // amount from database = actual cash received (not gross amount)
+            const cashAmount = parseFloat(initialData.amount) || 0;
+            const discount = parseFloat(initialData.discount) || 0;
+
             reset({
-                amount: initialData.amount,
-                discount: initialData.discount || '0',
+                cashAmount: cashAmount, // amount is already the cash received
+                discount: discount,
                 incomeCategory: initialData.incomeCategory,
                 paymentMethod: initialData.paymentMethod,
                 referenceNumber: initialData.referenceNumber || '',
@@ -58,9 +62,14 @@ const EditIncomeModal = ({ isOpen, onClose, initialData }) => {
     }, [isOpen, initialData, reset]);
 
     const onSubmit = (data) => {
+        // amount = actual cash/transfer received
+        // discount = absolute price reduction
+        const cashAmount = parseFloat(data.cashAmount) || 0;
+        const discount = parseFloat(data.discount) || 0;
+
         const payload = {
-            amount: data.amount,
-            discount: data.discount || '0',
+            amount: String(cashAmount), // Send only cash received as amount
+            discount: String(discount), // Discount is sent separately  
             incomeCategory: data.incomeCategory,
             paymentMethod: data.paymentMethod,
             referenceNumber: data.paymentMethod === 'transfer' ? data.referenceNumber : undefined,
@@ -100,14 +109,14 @@ const EditIncomeModal = ({ isOpen, onClose, initialData }) => {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Amount */}
+                    {/* Cash Amount */}
                     <Input
-                        label="Jumlah Pembayaran"
+                        label="Jumlah Pembayaran (Cash)"
                         type="number"
                         required
                         icon={<span className="text-sm font-medium">Rp</span>}
-                        error={errors.amount?.message}
-                        {...register('amount', {
+                        error={errors.cashAmount?.message}
+                        {...register('cashAmount', {
                             required: 'Jumlah wajib diisi',
                             min: { value: 1, message: 'Jumlah minimal 1' },
                         })}

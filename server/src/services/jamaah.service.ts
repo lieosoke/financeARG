@@ -1,5 +1,5 @@
 import { db } from '../config/database';
-import { jamaah, packages, transactions, NewJamaah, Jamaah } from '../db/schema';
+import { jamaah, packages, transactions, invoices, invoiceItems, NewJamaah, Jamaah } from '../db/schema';
 import { eq, desc, and, sql, count, sum, ne, or } from 'drizzle-orm';
 import { auditService } from './audit.service';
 import { notificationService } from './notification.service';
@@ -52,33 +52,37 @@ export const jamaahService = {
         const { page, limit } = pagination;
         const offset = (page - 1) * limit;
 
-        const conditions = [
-            eq(jamaah.isActive, true) // Only show active jamaah
-        ];
+        const conditions = [];
 
         if (filters.packageId) {
             conditions.push(eq(jamaah.packageId, filters.packageId));
         }
         if (filters.paymentStatus) {
             if (filters.paymentStatus === 'dp') {
-                conditions.push(or(
+                const dpCondition = or(
                     eq(jamaah.paymentStatus, 'dp'),
                     and(
                         eq(jamaah.paymentStatus, 'pending'),
                         sql`CAST(${jamaah.paidAmount} AS DECIMAL) > 0`
                     )
-                ));
+                );
+                if (dpCondition) {
+                    conditions.push(dpCondition);
+                }
             } else if (filters.paymentStatus === 'pending') {
-                conditions.push(and(
+                const pendingCondition = and(
                     ne(jamaah.paymentStatus, 'lunas'),
                     ne(jamaah.paymentStatus, 'dibatalkan')
-                ));
+                );
+                if (pendingCondition) {
+                    conditions.push(pendingCondition);
+                }
             } else {
                 conditions.push(eq(jamaah.paymentStatus, filters.paymentStatus as any));
             }
         }
         if (filters.isActive !== undefined) {
-            conditions.push(eq(jamaah.isActive, filters.isActive));
+            // conditions.push(eq(jamaah.isActive, filters.isActive));
         }
         if (filters.search) {
             conditions.push(
@@ -369,16 +373,6 @@ export const jamaahService = {
         const existingJamaah = await this.getById(id);
         if (!existingJamaah) return false;
 
-        // Soft delete by marking as inactive and cancelled
-        await db
-            .update(jamaah)
-            .set({
-                isActive: false,
-                isCancelled: true,
-                updatedAt: new Date(),
-            })
-            .where(eq(jamaah.id, id));
-
         // Decrement package booked seats
         if (existingJamaah.packageId) {
             await db
@@ -388,6 +382,18 @@ export const jamaahService = {
                 })
                 .where(eq(packages.id, existingJamaah.packageId));
         }
+
+        // Set jamaahId to null in related transactions to avoid FK constraint
+        await db
+            .update(transactions)
+            .set({ jamaahId: null })
+            .where(eq(transactions.jamaahId, id));
+
+        // Delete related invoices (invoice_items will be deleted via cascade)
+        await db.delete(invoices).where(eq(invoices.jamaahId, id));
+
+        // Hard delete
+        await db.delete(jamaah).where(eq(jamaah.id, id));
 
         // Log audit
         await auditService.log({
@@ -412,7 +418,6 @@ export const jamaahService = {
                 count: count(),
             })
             .from(jamaah)
-            .where(eq(jamaah.isActive, true))
             .groupBy(jamaah.paymentStatus);
 
         return result;
@@ -427,7 +432,7 @@ export const jamaahService = {
                 total: sum(jamaah.remainingAmount),
             })
             .from(jamaah)
-            .where(and(eq(jamaah.isActive, true), ne(jamaah.paymentStatus, 'lunas')));
+            .where(ne(jamaah.paymentStatus, 'lunas'));
 
         return parseFloat(result[0]?.total || '0');
     },
@@ -440,7 +445,6 @@ export const jamaahService = {
         const offset = (page - 1) * limit;
 
         const conditions = and(
-            eq(jamaah.isActive, true),
             ne(jamaah.paymentStatus, 'lunas'),
             sql`${jamaah.remainingAmount} > 0`
         );
@@ -480,8 +484,8 @@ export const jamaahService = {
     async getActiveCount(): Promise<number> {
         const result = await db
             .select({ count: count() })
-            .from(jamaah)
-            .where(eq(jamaah.isActive, true));
+            .from(jamaah);
+        // .where(eq(jamaah.isActive, true));
 
         return result[0]?.count || 0;
     },
@@ -513,6 +517,76 @@ export const jamaahService = {
         } catch (error) {
             console.error('Bulk update error:', error);
             return false;
+        }
+    },
+
+    /**
+     * Recalculate all jamaah payment data based on transaction history
+     * This fixes incorrect paidAmount, remainingAmount, and paymentStatus
+     */
+    async recalculateAllPayments(): Promise<{ updated: number; errors: string[] }> {
+        const errors: string[] = [];
+        let updated = 0;
+
+        try {
+            // Get all jamaah
+            const allJamaah = await db.select().from(jamaah);
+
+            for (const j of allJamaah) {
+                try {
+                    // Sum all income transactions for this jamaah
+                    const [transactionSum] = await db
+                        .select({
+                            totalCash: sql<string>`COALESCE(SUM(CAST(${transactions.amount} AS DECIMAL)), 0)`,
+                            totalDiscount: sql<string>`COALESCE(SUM(CAST(${transactions.discount} AS DECIMAL)), 0)`,
+                        })
+                        .from(transactions)
+                        .where(and(
+                            eq(transactions.jamaahId, j.id),
+                            eq(transactions.type, 'pemasukan')
+                        ));
+
+                    const totalCashReceived = parseFloat(transactionSum?.totalCash || '0');
+                    const totalDiscountGiven = parseFloat(transactionSum?.totalDiscount || '0');
+                    const totalAmount = parseFloat(j.totalAmount);
+
+                    // Calculate correct values
+                    // paidAmount = actual cash received (not including discount)
+                    const correctPaidAmount = totalCashReceived;
+                    // remainingAmount = totalAmount - (cash + discount)
+                    const correctRemainingAmount = Math.max(0, totalAmount - totalCashReceived - totalDiscountGiven);
+
+                    // Determine correct payment status
+                    let correctStatus: 'pending' | 'dp' | 'cicilan' | 'lunas' = 'pending';
+                    if (correctRemainingAmount <= 0 || correctPaidAmount >= totalAmount) {
+                        correctStatus = 'lunas';
+                    } else if (correctPaidAmount > 0 && correctPaidAmount < totalAmount * 0.3) {
+                        correctStatus = 'dp';
+                    } else if (correctPaidAmount >= totalAmount * 0.3) {
+                        correctStatus = 'cicilan';
+                    }
+
+                    // Update jamaah with correct values
+                    await db
+                        .update(jamaah)
+                        .set({
+                            paidAmount: correctPaidAmount.toString(),
+                            remainingAmount: correctRemainingAmount.toString(),
+                            paymentStatus: correctStatus,
+                            updatedAt: new Date(),
+                        })
+                        .where(eq(jamaah.id, j.id));
+
+                    updated++;
+                } catch (err: any) {
+                    errors.push(`Failed to update jamaah ${j.name} (${j.id}): ${err.message}`);
+                }
+            }
+
+            return { updated, errors };
+        } catch (error: any) {
+            console.error('Recalculate payments error:', error);
+            throw error;
         }
     },
 };

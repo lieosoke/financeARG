@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Building2, Phone, MapPin, Mail, Save, Edit2, Loader2, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react';
+import { Building2, Phone, MapPin, Mail, Save, Edit2, Loader2, CheckCircle, AlertCircle, RefreshCw, CreditCard, Plus, Trash2 } from 'lucide-react';
 import Card from '../../components/molecules/Card';
 import Button from '../../components/atoms/Button';
 import Input from '../../components/atoms/Input';
@@ -16,6 +16,7 @@ const CompanySettings = () => {
         city: '',
         phone: '',
         email: '',
+        bankAccounts: [],
     });
     const [showSuccess, setShowSuccess] = useState(false);
 
@@ -28,6 +29,7 @@ const CompanySettings = () => {
                 city: settingsData.data.city || '',
                 phone: settingsData.data.phone || '',
                 email: settingsData.data.email || '',
+                bankAccounts: settingsData.data.bankAccounts || [],
             });
         }
     }, [settingsData]);
@@ -57,6 +59,7 @@ const CompanySettings = () => {
                 city: settingsData.data.city || '',
                 phone: settingsData.data.phone || '',
                 email: settingsData.data.email || '',
+                bankAccounts: settingsData.data.bankAccounts || [],
             });
         }
         setIsEditing(false);
@@ -249,6 +252,96 @@ const CompanySettings = () => {
                                     {formData.email || <span className="text-gray-500 italic">Belum diatur</span>}
                                 </p>
                             )}
+                        </div>
+                    </div>
+
+                    {/* Bank Accounts */}
+                    <div className="flex items-start gap-4">
+                        <div className="w-10 h-10 bg-indigo-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                            <CreditCard className="w-5 h-5 text-indigo-400" />
+                        </div>
+                        <div className="flex-1">
+                            <div className="flex items-center justify-between mb-2">
+                                <label className="block text-sm font-medium text-gray-400">
+                                    Rekening Bank
+                                </label>
+                                {isEditing && (
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => setFormData(prev => ({
+                                            ...prev,
+                                            bankAccounts: [...(prev.bankAccounts || []), { bankName: '', accountNumber: '', accountHolder: '' }]
+                                        }))}
+                                        icon={<Plus className="w-3 h-3" />}
+                                    >
+                                        Tambah
+                                    </Button>
+                                )}
+                            </div>
+
+                            <div className="space-y-3">
+                                {(formData.bankAccounts || []).map((account, index) => (
+                                    <div key={index} className="bg-gray-800/50 p-3 rounded-lg border border-gray-700">
+                                        {isEditing ? (
+                                            <div className="space-y-3">
+                                                <div className="grid grid-cols-2 gap-3">
+                                                    <Input
+                                                        placeholder="Nama Bank (mis: BCA)"
+                                                        value={account.bankName}
+                                                        onChange={(e) => {
+                                                            const newAccounts = [...formData.bankAccounts];
+                                                            newAccounts[index] = { ...newAccounts[index], bankName: e.target.value };
+                                                            setFormData(prev => ({ ...prev, bankAccounts: newAccounts }));
+                                                        }}
+                                                    />
+                                                    <Input
+                                                        placeholder="No. Rekening"
+                                                        value={account.accountNumber}
+                                                        onChange={(e) => {
+                                                            const newAccounts = [...formData.bankAccounts];
+                                                            newAccounts[index] = { ...newAccounts[index], accountNumber: e.target.value };
+                                                            setFormData(prev => ({ ...prev, bankAccounts: newAccounts }));
+                                                        }}
+                                                    />
+                                                </div>
+                                                <div className="flex gap-3">
+                                                    <Input
+                                                        placeholder="Atas Nama"
+                                                        value={account.accountHolder}
+                                                        onChange={(e) => {
+                                                            const newAccounts = [...formData.bankAccounts];
+                                                            newAccounts[index] = { ...newAccounts[index], accountHolder: e.target.value };
+                                                            setFormData(prev => ({ ...prev, bankAccounts: newAccounts }));
+                                                        }}
+                                                    />
+                                                    <Button
+                                                        variant="danger"
+                                                        size="icon"
+                                                        onClick={() => {
+                                                            const newAccounts = formData.bankAccounts.filter((_, i) => i !== index);
+                                                            setFormData(prev => ({ ...prev, bankAccounts: newAccounts }));
+                                                        }}
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="flex justify-between items-center">
+                                                <div>
+                                                    <p className="font-medium text-white">{account.bankName} - {account.accountNumber}</p>
+                                                    <p className="text-sm text-gray-400">a.n {account.accountHolder}</p>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+
+                                {(!formData.bankAccounts || formData.bankAccounts.length === 0) && !isEditing && (
+                                    <p className="text-gray-500 italic text-sm">Belum ada rekening bank yang ditambahkan</p>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>

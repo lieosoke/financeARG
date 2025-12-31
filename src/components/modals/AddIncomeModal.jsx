@@ -58,7 +58,7 @@ const AddIncomeModal = ({ isOpen, onClose }) => {
         defaultValues: {
             jamaahId: '',
             packageId: '',
-            amount: '',
+            cashAmount: '', // Renamed from amount
             discount: '',
             incomeCategory: 'dp',
             paymentMethod: 'cash',
@@ -71,7 +71,7 @@ const AddIncomeModal = ({ isOpen, onClose }) => {
     // Watch form values
     const watchedJamaahId = watch('jamaahId');
     const watchedPackageId = watch('packageId');
-    const watchedAmount = watch('amount');
+    const watchedCashAmount = watch('cashAmount'); // Renamed from watchedAmount
     const watchedDiscount = watch('discount');
     const watchedPaymentMethod = watch('paymentMethod');
     const watchedCategory = watch('incomeCategory');
@@ -101,14 +101,19 @@ const AddIncomeModal = ({ isOpen, onClose }) => {
     }, [selectedJamaah]);
 
     // Calculate amounts
-    const grossAmount = parseFloat(watchedAmount) || 0;
+    // Cash Amount (Uang Diterima)
+    const cashAmount = parseFloat(watchedCashAmount) || 0;
+    // Discount (Potongan Harga) - reduces the total amount owed
     const discount = parseFloat(watchedDiscount) || 0;
-    const netAmount = Math.max(0, grossAmount - discount);
 
-    // Calculate remaining after this payment (discount reduces debt, so use grossAmount)
-    const remainingAfterPayment = jamaahPaymentInfo
-        ? Math.max(0, jamaahPaymentInfo.remainingAmount - grossAmount)
+    // Remaining after discount is applied (discount reduces what they owe)
+    const remainingAfterDiscount = jamaahPaymentInfo
+        ? Math.max(0, jamaahPaymentInfo.remainingAmount - discount)
         : 0;
+
+    // Calculate remaining after this payment
+    // Cash payment reduces the discounted remaining
+    const remainingAfterPayment = Math.max(0, remainingAfterDiscount - cashAmount);
 
     // Auto-set package when jamaah is selected (if jamaah has package)
     useEffect(() => {
@@ -179,11 +184,16 @@ const AddIncomeModal = ({ isOpen, onClose }) => {
             }
         }
 
+        // amount = actual cash/transfer received
+        // discount = absolute price reduction (reduces debt, not counted as income)
+        const cashAmount = parseFloat(data.cashAmount) || 0;
+        const discount = parseFloat(data.discount) || 0;
+
         const payload = {
             jamaahId: data.jamaahId,
             packageId: data.packageId,
-            amount: data.amount,
-            discount: data.discount || '0',
+            amount: String(cashAmount), // Send only cash received as amount
+            discount: String(discount), // Discount is sent separately
             incomeCategory: data.incomeCategory,
             paymentMethod: data.paymentMethod,
             referenceNumber: data.paymentMethod === 'transfer' ? data.referenceNumber : undefined,
@@ -359,19 +369,19 @@ const AddIncomeModal = ({ isOpen, onClose }) => {
                         </div>
                     )}
 
-                    {/* Amount */}
+                    {/* Amount (Cash Received) */}
                     <Input
-                        label="Jumlah Pembayaran"
+                        label="Nominal Uang Diterima (Cash/Transfer)"
                         type="number"
                         placeholder={jamaahPaymentInfo ? String(Math.round(jamaahPaymentInfo.remainingAmount)) : "1000000"}
                         required
                         icon={<span className="text-sm font-medium">Rp</span>}
-                        error={errors.amount?.message}
+                        error={errors.cashAmount?.message}
                         helper={jamaahPaymentInfo && jamaahPaymentInfo.remainingAmount > 0
-                            ? `Sisa: ${formatCurrency(jamaahPaymentInfo.remainingAmount)}`
+                            ? `Sisa Tagihan: ${formatCurrency(jamaahPaymentInfo.remainingAmount)}`
                             : undefined}
-                        {...register('amount', {
-                            required: 'Jumlah wajib diisi',
+                        {...register('cashAmount', {
+                            required: 'Jumlah uang diterima wajib diisi',
                             min: { value: 1, message: 'Jumlah minimal 1' },
                             pattern: { value: /^\d+$/, message: 'Harus berupa angka (tanpa desimal)' }
                         })}
@@ -379,22 +389,15 @@ const AddIncomeModal = ({ isOpen, onClose }) => {
 
                     {/* Discount - OPTIONAL */}
                     <Input
-                        label="Diskon"
+                        label="Diskon / Potongan Harga"
                         type="number"
                         placeholder="0"
                         icon={<span className="text-sm font-medium">Rp</span>}
-                        helper="Opsional - potongan harga"
+                        helper="Opsional - Mengurangi total tagihan"
                         error={errors.discount?.message}
                         {...register('discount', {
                             min: { value: 0, message: 'Diskon tidak boleh negatif' },
-                            validate: (value) => {
-                                const discountVal = parseFloat(value) || 0;
-                                const amountVal = parseFloat(watchedAmount) || 0;
-                                if (discountVal > amountVal) {
-                                    return 'Diskon tidak boleh lebih besar dari jumlah';
-                                }
-                                return true;
-                            }
+                            // Validation removed: Discount can be anything, though usually less than debt.
                         })}
                     />
 
@@ -545,45 +548,51 @@ const AddIncomeModal = ({ isOpen, onClose }) => {
                         </div>
                     </div>
 
-                    {/* Payment Summary - Show when amount is entered */}
-                    {grossAmount > 0 && (
+                    {/* Payment Summary */}
+                    {(cashAmount > 0 || discount > 0) && jamaahPaymentInfo && (
                         <div className="md:col-span-2 bg-dark-tertiary/50 rounded-xl p-4 border border-surface-border">
-                            <h4 className="text-sm font-medium text-gray-400 mb-3">Ringkasan Pembayaran</h4>
+                            <h4 className="text-sm font-medium text-emerald-400 mb-3 block">Validasi Pembayaran</h4>
                             <div className="space-y-2">
+                                {/* Show original remaining */}
                                 <div className="flex justify-between text-sm">
-                                    <span className="text-gray-500">Jumlah Pembayaran</span>
-                                    <span className="text-white">{formatCurrency(grossAmount)}</span>
-                                </div>
-                                {discount > 0 && (
-                                    <div className="flex justify-between text-sm">
-                                        <span className="text-gray-500">Diskon</span>
-                                        <span className="text-rose-400">-{formatCurrency(discount)}</span>
-                                    </div>
-                                )}
-                                <div className="flex justify-between pt-2 border-t border-surface-border">
-                                    <span className="font-medium text-white">Total Diterima</span>
-                                    <span className="font-bold text-lg text-emerald-400">{formatCurrency(netAmount)}</span>
+                                    <span className="text-gray-400">Sisa Tagihan Saat Ini</span>
+                                    <span className="text-white font-medium">{formatCurrency(jamaahPaymentInfo.remainingAmount)}</span>
                                 </div>
 
-                                {/* Show remaining balance after payment for cicilan/pelunasan */}
-                                {jamaahPaymentInfo && (watchedCategory === 'cicilan' || watchedCategory === 'pelunasan') && (
-                                    <div className="mt-3 pt-3 border-t border-surface-border">
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <Info className="w-4 h-4 text-blue-400" />
-                                            <span className="text-xs text-blue-400">Estimasi setelah pembayaran ini</span>
-                                        </div>
-                                        <div className="flex justify-between text-sm">
-                                            <span className="text-gray-500">Sisa yang harus dibayar</span>
-                                            <span className={`font-semibold ${remainingAfterPayment <= 0 ? 'text-emerald-400' : 'text-amber-400'}`}>
-                                                {remainingAfterPayment <= 0 ? 'LUNAS' : formatCurrency(remainingAfterPayment)}
-                                            </span>
-                                        </div>
-                                        {remainingAfterPayment <= 0 && netAmount >= jamaahPaymentInfo.remainingAmount && (
-                                            <p className="text-xs text-emerald-400 mt-1">
-                                                🎉 Pembayaran ini akan melunasi seluruh tagihan jamaah
-                                            </p>
-                                        )}
+                                {/* Discount reduces the price */}
+                                {discount > 0 && (
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-gray-400">Diskon (Potongan Harga)</span>
+                                        <span className="text-amber-400 font-medium">-{formatCurrency(discount)}</span>
                                     </div>
+                                )}
+
+                                {/* Amount to pay after discount */}
+                                {discount > 0 && (
+                                    <div className="flex justify-between text-sm pt-2 border-t border-surface-border border-dashed">
+                                        <span className="text-gray-300">Tagihan Setelah Diskon</span>
+                                        <span className="font-semibold text-white">{formatCurrency(remainingAfterDiscount)}</span>
+                                    </div>
+                                )}
+
+                                {/* Cash payment */}
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-gray-400">Uang Diterima (Cash/Transfer)</span>
+                                    <span className="text-emerald-400 font-medium">-{formatCurrency(cashAmount)}</span>
+                                </div>
+
+                                {/* Final remaining */}
+                                <div className="flex justify-between pt-2 border-t border-surface-border">
+                                    <span className="text-gray-300 font-medium">Sisa Tagihan Akhir</span>
+                                    <span className={`font-bold text-lg ${remainingAfterPayment <= 0 ? 'text-emerald-400' : 'text-amber-400'}`}>
+                                        {remainingAfterPayment <= 0 ? 'LUNAS' : formatCurrency(remainingAfterPayment)}
+                                    </span>
+                                </div>
+
+                                {remainingAfterPayment <= 0 && cashAmount >= remainingAfterDiscount && (
+                                    <p className="text-xs text-emerald-400 mt-2 text-center bg-emerald-500/10 py-2 rounded-lg border border-emerald-500/20">
+                                        🎉 Pembayaran ini akan melunasi seluruh tagihan jamaah
+                                    </p>
                                 )}
                             </div>
                         </div>
