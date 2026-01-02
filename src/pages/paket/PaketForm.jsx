@@ -50,6 +50,7 @@ const PaketForm = () => {
             returnDate: '',
             totalSeats: '',
             pricePerPerson: '',
+            estimatedCost: '',
             description: '',
             status: 'open',
         },
@@ -66,6 +67,7 @@ const PaketForm = () => {
                 returnDate: existingPackage.returnDate ? formatDateToID(existingPackage.returnDate) : '',
                 totalSeats: existingPackage.totalSeats?.toString() || '',
                 pricePerPerson: existingPackage.pricePerPerson?.toString() || '',
+                estimatedCost: existingPackage.estimatedCost?.toString() || '',
                 description: existingPackage.description || '',
                 status: existingPackage.status || 'open',
             });
@@ -82,6 +84,7 @@ const PaketForm = () => {
             returnDate: data.returnDate ? formatDateForAPI(data.returnDate) : undefined,
             totalSeats: parseInt(data.totalSeats) || 0,
             pricePerPerson: data.pricePerPerson || '0',
+            estimatedCost: data.estimatedCost || '0',
             description: data.description || undefined,
             status: data.status,
         };
@@ -252,6 +255,14 @@ const PaketForm = () => {
                             icon={<span className="text-sm font-medium">Rp</span>}
                             error={errors.pricePerPerson?.message}
                             {...register('pricePerPerson', { required: 'Harga wajib diisi' })}
+                        />
+                        <Input
+                            label="Estimasi Biaya (Budget)"
+                            type="number"
+                            placeholder="15000000"
+                            icon={<span className="text-sm font-medium">Rp</span>}
+                            error={errors.estimatedCost?.message}
+                            {...register('estimatedCost')}
                         />
                         <div className="md:col-span-2">
                             <label className="block text-sm font-medium text-gray-300 mb-2">

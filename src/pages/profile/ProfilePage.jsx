@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Card from '../../components/molecules/Card';
 import Input from '../../components/atoms/Input';
 import Button from '../../components/atoms/Button';
@@ -7,10 +7,10 @@ import { useAuth } from '../../contexts/AuthContext';
 import { usersApi } from '../../services/api/users';
 
 const ProfilePage = () => {
-    const { user, refetch } = useAuth();
+    const { user, updateUser } = useAuth();
     const [formData, setFormData] = useState({
-        name: user?.name || 'Admin User',
-        email: user?.email || 'admin@argtour.com',
+        name: user?.name || '',
+        email: user?.email || '',
         currentPassword: '',
         newPassword: '',
         confirmPassword: '',
@@ -19,6 +19,18 @@ const ProfilePage = () => {
     const [loading, setLoading] = useState(false);
     const [passwordLoading, setPasswordLoading] = useState(false);
     const [message, setMessage] = useState({ type: '', text: '' });
+
+    // Sync form data when user context updates
+    useEffect(() => {
+        if (user) {
+            setFormData(prev => ({
+                ...prev,
+                name: user.name || '',
+                email: user.email || '',
+            }));
+        }
+    }, [user]);
+
 
     const handleChange = (e) => {
         setFormData({
@@ -45,10 +57,13 @@ const ProfilePage = () => {
             const { currentPassword, newPassword, confirmPassword, ...profileData } = formData;
             const response = await usersApi.update(user.id, profileData);
 
-            if (response.success) {
+            if (response.success || response.data) {
                 setMessage({ type: 'success', text: 'Profil berhasil diperbarui' });
-                // Optional: Update global auth context user if needed
-                await refetch();
+                // Update auth context directly with new data
+                updateUser({
+                    name: formData.name,
+                    email: formData.email,
+                });
             }
         } catch (error) {
             console.error('Update profile error:', error);
@@ -60,6 +75,7 @@ const ProfilePage = () => {
             setLoading(false);
         }
     };
+
 
     const handlePasswordChange = async (e) => {
         e.preventDefault();

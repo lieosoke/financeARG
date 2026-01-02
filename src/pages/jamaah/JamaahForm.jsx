@@ -276,10 +276,16 @@ const JamaahForm = () => {
                                     placeholder="16 digit NIK"
                                     icon={<CreditCard className="w-4 h-4" />}
                                     required
+                                    maxLength={16}
+                                    inputMode="numeric"
                                     error={errors.nik?.message}
                                     {...register('nik', {
                                         required: 'NIK wajib diisi',
                                         pattern: { value: /^\d{16}$/, message: 'NIK harus 16 digit angka' },
+                                        minLength: { value: 16, message: 'NIK harus 16 digit angka' },
+                                        onChange: (e) => {
+                                            e.target.value = e.target.value.replace(/\D/g, '').slice(0, 16);
+                                        },
                                     })}
                                 />
 

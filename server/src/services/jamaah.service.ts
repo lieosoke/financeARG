@@ -184,12 +184,14 @@ export const jamaahService = {
         // Calculate remaining amount
         const totalAmount = parseFloat(data.totalAmount);
         const paidAmount = parseFloat(data.paidAmount || '0');
-        const remainingAmount = (totalAmount - paidAmount).toString();
+        let remainingAmount = Math.max(0, totalAmount - paidAmount).toString();
 
         // Determine payment status
         let paymentStatus: 'pending' | 'dp' | 'lunas' = 'pending';
         if (paidAmount >= totalAmount) {
             paymentStatus = 'lunas';
+            // When lunas, ALWAYS ensure remainingAmount is exactly 0
+            remainingAmount = '0';
         } else if (paidAmount > 0) {
             paymentStatus = 'dp';
         }
@@ -306,11 +308,13 @@ export const jamaahService = {
         if (data.totalAmount || data.paidAmount) {
             const totalAmount = parseFloat(data.totalAmount || existingJamaah.totalAmount);
             const paidAmount = parseFloat(data.paidAmount || existingJamaah.paidAmount);
-            updateData.remainingAmount = (totalAmount - paidAmount).toString();
+            updateData.remainingAmount = Math.max(0, totalAmount - paidAmount).toString();
 
             // Update payment status
             if (paidAmount >= totalAmount) {
                 updateData.paymentStatus = 'lunas';
+                // When lunas, ALWAYS ensure remainingAmount is exactly 0
+                updateData.remainingAmount = '0';
             } else if (paidAmount > 0) {
                 updateData.paymentStatus = 'dp';
             } else {
@@ -554,12 +558,14 @@ export const jamaahService = {
                     // paidAmount = actual cash received (not including discount)
                     const correctPaidAmount = totalCashReceived;
                     // remainingAmount = totalAmount - (cash + discount)
-                    const correctRemainingAmount = Math.max(0, totalAmount - totalCashReceived - totalDiscountGiven);
+                    let correctRemainingAmount = Math.max(0, totalAmount - totalCashReceived - totalDiscountGiven);
 
                     // Determine correct payment status
                     let correctStatus: 'pending' | 'dp' | 'cicilan' | 'lunas' = 'pending';
                     if (correctRemainingAmount <= 0 || correctPaidAmount >= totalAmount) {
                         correctStatus = 'lunas';
+                        // When lunas, ALWAYS ensure remainingAmount is exactly 0
+                        correctRemainingAmount = 0;
                     } else if (correctPaidAmount > 0 && correctPaidAmount < totalAmount * 0.3) {
                         correctStatus = 'dp';
                     } else if (correctPaidAmount >= totalAmount * 0.3) {

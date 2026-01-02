@@ -19,12 +19,18 @@ export const incomeCategoryEnum = pgEnum('income_category', [
 export const expenseCategoryEnum = pgEnum('expense_category', [
     'tiket_pesawat',
     'hotel',
+    'hotel_transit',
     'transport',
     'visa_handling',
     'visa',
     'handling',
     'muthawif',
     'konsumsi',
+    'manasik',
+    'tour_leader',
+    'operasional_kantor',
+    'atk_kantor',
+    'keperluan_kantor_lainnya',
     'lainnya',
 ]);
 

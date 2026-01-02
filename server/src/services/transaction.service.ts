@@ -150,12 +150,13 @@ export const transactionService = {
         // - paidAmount: increases by cashReceived (actual money received)
         // - remainingAmount: decreases by totalDebtReduction (cash + discount)
         // This ensures discount acts as absolute price reduction
+        // GREATEST ensures remainingAmount never goes negative
         if (data.jamaahId) {
             await db
                 .update(jamaah)
                 .set({
                     paidAmount: sql`${jamaah.paidAmount} + ${cashReceived}`,
-                    remainingAmount: sql`${jamaah.remainingAmount} - ${totalDebtReduction}`,
+                    remainingAmount: sql`GREATEST(0, ${jamaah.remainingAmount} - ${totalDebtReduction})`,
                     updatedAt: new Date(),
                 })
                 .where(eq(jamaah.id, data.jamaahId));
@@ -168,6 +169,7 @@ export const transactionService = {
                 const paid = parseFloat(j.paidAmount);
                 const total = parseFloat(j.totalAmount);
 
+                // Determine new status based on payment progress
                 if (remaining <= 0 || paid >= total) {
                     newStatus = 'lunas';
                 } else if (paid > 0 && paid < total * 0.3) {
@@ -176,9 +178,16 @@ export const transactionService = {
                     newStatus = 'cicilan';
                 }
 
+                // When status is lunas, ALWAYS ensure remainingAmount is exactly 0
+                // This prevents any edge case bugs where remainingAmount could be non-zero
+                const updateData: any = { paymentStatus: newStatus as any };
+                if (newStatus === 'lunas') {
+                    updateData.remainingAmount = '0';
+                }
+
                 await db
                     .update(jamaah)
-                    .set({ paymentStatus: newStatus as any })
+                    .set(updateData)
                     .where(eq(jamaah.id, data.jamaahId));
             }
         }
@@ -337,11 +346,12 @@ export const transactionService = {
             // Reverse the payment amounts
             // - paidAmount: decrease by cashReceived (actual money that was received)
             // - remainingAmount: increase by totalDebtReduction (cash + discount)
+            // LEAST ensures remainingAmount doesn't exceed totalAmount
             await db
                 .update(jamaah)
                 .set({
-                    paidAmount: sql`GREATEST(${jamaah.paidAmount} - ${cashReceived}, 0)`,
-                    remainingAmount: sql`${jamaah.remainingAmount} + ${totalDebtReduction}`,
+                    paidAmount: sql`GREATEST(0, ${jamaah.paidAmount} - ${cashReceived})`,
+                    remainingAmount: sql`LEAST(${jamaah.totalAmount}, ${jamaah.remainingAmount} + ${totalDebtReduction})`,
                     updatedAt: new Date(),
                 })
                 .where(eq(jamaah.id, existing.jamaahId));
@@ -354,6 +364,7 @@ export const transactionService = {
                 const paid = parseFloat(j.paidAmount);
                 const total = parseFloat(j.totalAmount);
 
+                // Determine new status based on payment progress
                 if (remaining <= 0 || paid >= total) {
                     newStatus = 'lunas';
                 } else if (paid > 0 && paid < total * 0.3) {
@@ -362,9 +373,16 @@ export const transactionService = {
                     newStatus = 'cicilan';
                 }
 
+                // When status is lunas, ALWAYS ensure remainingAmount is exactly 0
+                // This prevents any edge case bugs where remainingAmount could be non-zero
+                const updateData: any = { paymentStatus: newStatus as any };
+                if (newStatus === 'lunas') {
+                    updateData.remainingAmount = '0';
+                }
+
                 await db
                     .update(jamaah)
-                    .set({ paymentStatus: newStatus as any })
+                    .set(updateData)
                     .where(eq(jamaah.id, existing.jamaahId));
             }
         }

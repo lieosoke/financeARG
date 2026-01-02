@@ -57,11 +57,17 @@ const EditExpenseModal = ({ isOpen, onClose, initialData }) => {
     const categoryOptions = [
         { value: 'tiket_pesawat', label: 'Tiket Pesawat' },
         { value: 'hotel', label: 'Hotel' },
+        { value: 'hotel_transit', label: 'Hotel Transit' },
         { value: 'transport', label: 'Transport' },
         { value: 'visa', label: 'Visa' },
         { value: 'handling', label: 'Handling' },
         { value: 'muthawif', label: 'Muthawif' },
         { value: 'konsumsi', label: 'Konsumsi' },
+        { value: 'manasik', label: 'Manasik' },
+        { value: 'tour_leader', label: 'Tour Leader' },
+        { value: 'operasional_kantor', label: 'Operasional Kantor' },
+        { value: 'atk_kantor', label: 'ATK Kantor' },
+        { value: 'keperluan_kantor_lainnya', label: 'Keperluan Kantor Lainnya' },
         { value: 'lainnya', label: 'Lainnya' },
     ];
 

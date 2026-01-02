@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
-import { Calendar, User, Package, FileText, Loader2, AlertCircle, RefreshCw, Wallet, Info, CreditCard, Upload, X, Image } from 'lucide-react';
+import { Calendar, User, Package, FileText, Loader2, AlertCircle, RefreshCw, Wallet, Info, CreditCard, Upload, X, Image, Search, ChevronDown } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Modal from '../molecules/Modal';
 import Button from '../atoms/Button';
@@ -23,19 +23,57 @@ import { useQueryClient } from '@tanstack/react-query';
 const AddIncomeModal = ({ isOpen, onClose }) => {
     const queryClient = useQueryClient();
 
-    // Fetch jamaah list
-    const { data: jamaahData, isLoading: jamaahLoading, isError: jamaahError, refetch: refetchJamaah } = useJamaahList(
-        { limit: 200 },
-        { enabled: isOpen }
-    );
-    const jamaahList = jamaahData?.data || [];
+    // Form setup - MUST be defined before hooks that use watched values
+    const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm({
+        defaultValues: {
+            jamaahId: '',
+            packageId: '',
+            cashAmount: '', // Renamed from amount
+            discount: '',
+            incomeCategory: 'dp',
+            paymentMethod: 'cash',
+            referenceNumber: '',
+            transactionDate: formatDateToID(new Date()),
+            description: '',
+        },
+    });
 
-    // Fetch packages
+    // Watch form values - packageId MUST be watched first for dynamic jamaah query
+    const watchedPackageId = watch('packageId');
+    const watchedJamaahId = watch('jamaahId');
+    const watchedCashAmount = watch('cashAmount');
+    const watchedDiscount = watch('discount');
+    const watchedPaymentMethod = watch('paymentMethod');
+    const watchedCategory = watch('incomeCategory');
+
+    // Fetch packages FIRST (user selects package first)
     const { data: packagesData, isLoading: packagesLoading, isError: packagesError, refetch: refetchPackages } = usePackages(
         { status: 'open', limit: 100 },
         { enabled: isOpen }
     );
     const packages = packagesData?.data || [];
+
+    // Jamaah search and dropdown state
+    const [jamaahSearch, setJamaahSearch] = useState('');
+    const [showJamaahDropdown, setShowJamaahDropdown] = useState(false);
+    const jamaahDropdownRef = useRef(null);
+
+    // Fetch jamaah list FILTERED by selected package
+    const { data: jamaahData, isLoading: jamaahLoading, isError: jamaahError, refetch: refetchJamaah } = useJamaahList(
+        { limit: 200, packageId: watchedPackageId || undefined },
+        { enabled: isOpen && !!watchedPackageId }
+    );
+    const jamaahList = jamaahData?.data || [];
+
+    // Filter jamaah by search term (client-side)
+    const filteredJamaahList = useMemo(() => {
+        if (!jamaahSearch.trim()) return jamaahList;
+        const searchLower = jamaahSearch.toLowerCase();
+        return jamaahList.filter(j =>
+            j.name.toLowerCase().includes(searchLower) ||
+            (j.phone && j.phone.includes(jamaahSearch))
+        );
+    }, [jamaahList, jamaahSearch]);
 
     // Create income mutation
     const createMutation = useCreateIncome({
@@ -54,27 +92,7 @@ const AddIncomeModal = ({ isOpen, onClose }) => {
     const fileInputRef = useRef(null);
     const [paymentProof, setPaymentProof] = useState(null); // { file, preview }
 
-    const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm({
-        defaultValues: {
-            jamaahId: '',
-            packageId: '',
-            cashAmount: '', // Renamed from amount
-            discount: '',
-            incomeCategory: 'dp',
-            paymentMethod: 'cash',
-            referenceNumber: '',
-            transactionDate: formatDateToID(new Date()),
-            description: '',
-        },
-    });
 
-    // Watch form values
-    const watchedJamaahId = watch('jamaahId');
-    const watchedPackageId = watch('packageId');
-    const watchedCashAmount = watch('cashAmount'); // Renamed from watchedAmount
-    const watchedDiscount = watch('discount');
-    const watchedPaymentMethod = watch('paymentMethod');
-    const watchedCategory = watch('incomeCategory');
 
     // Get selected jamaah info
     const selectedJamaah = useMemo(() => {
@@ -115,20 +133,41 @@ const AddIncomeModal = ({ isOpen, onClose }) => {
     // Cash payment reduces the discounted remaining
     const remainingAfterPayment = Math.max(0, remainingAfterDiscount - cashAmount);
 
-    // Auto-set package when jamaah is selected (if jamaah has package)
+    // Reset jamaah selection when package changes
     useEffect(() => {
-        if (selectedJamaah?.packageId && !watchedPackageId) {
-            setValue('packageId', selectedJamaah.packageId);
+        if (watchedPackageId) {
+            setValue('jamaahId', '');
+            setJamaahSearch('');
         }
-    }, [selectedJamaah, watchedPackageId, setValue]);
+    }, [watchedPackageId, setValue]);
 
     // Reset form when modal closes
     useEffect(() => {
         if (!isOpen) {
             reset();
             setPaymentProof(null);
+            setJamaahSearch('');
+            setShowJamaahDropdown(false);
         }
     }, [isOpen, reset]);
+
+    // Click outside handler for jamaah dropdown
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (jamaahDropdownRef.current && !jamaahDropdownRef.current.contains(event.target)) {
+                setShowJamaahDropdown(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    // Handle jamaah selection from custom dropdown
+    const handleJamaahSelect = useCallback((j) => {
+        setValue('jamaahId', j.id);
+        setJamaahSearch(j.name);
+        setShowJamaahDropdown(false);
+    }, [setValue]);
 
     // Handle file selection
     const handleFileSelect = (e) => {
@@ -242,56 +281,7 @@ const AddIncomeModal = ({ isOpen, onClose }) => {
         >
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Jamaah Selection - REQUIRED */}
-                    <div className="w-full">
-                        <label className="block text-sm font-medium text-gray-300 mb-2">
-                            Jamaah <span className="text-rose-400">*</span>
-                        </label>
-                        <div className="relative">
-                            <User className="absolute left-3.5 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500" />
-                            {jamaahLoading ? (
-                                <div className="w-full px-4 py-3 pl-11 rounded-xl bg-dark-tertiary/50 border border-surface-border flex items-center gap-2">
-                                    <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
-                                    <span className="text-gray-500">Memuat...</span>
-                                </div>
-                            ) : jamaahError ? (
-                                <div className="w-full px-4 py-3 pl-11 rounded-xl bg-dark-tertiary/50 border border-rose-500/50 flex items-center justify-between gap-2 text-rose-400">
-                                    <div className="flex items-center gap-2">
-                                        <AlertCircle className="w-4 h-4" />
-                                        <span className="text-sm">Gagal memuat jamaah</span>
-                                    </div>
-                                    <button
-                                        type="button"
-                                        onClick={() => refetchJamaah()}
-                                        className="text-xs underline hover:text-rose-300"
-                                    >
-                                        Coba lagi
-                                    </button>
-                                </div>
-                            ) : (
-                                <select
-                                    className={`w-full px-4 py-3 pl-11 rounded-xl bg-dark-tertiary/50 border ${errors.jamaahId ? 'border-rose-500' : 'border-surface-border'} text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 transition-all duration-200 appearance-none`}
-                                    {...register('jamaahId', { required: 'Jamaah wajib dipilih' })}
-                                >
-                                    <option value="">Pilih Jamaah</option>
-                                    {jamaahList.length === 0 ? (
-                                        <option value="" disabled>Tidak ada jamaah tersedia</option>
-                                    ) : (
-                                        jamaahList.map((j) => (
-                                            <option key={j.id} value={j.id}>
-                                                {j.name} - {j.phone || '-'}
-                                            </option>
-                                        ))
-                                    )}
-                                </select>
-                            )}
-                        </div>
-                        {errors.jamaahId && (
-                            <p className="text-rose-400 text-xs mt-1">{errors.jamaahId.message}</p>
-                        )}
-                    </div>
-
-                    {/* Package Selection - REQUIRED */}
+                    {/* Package Selection - REQUIRED (SELECT FIRST) */}
                     <div className="w-full">
                         <label className="block text-sm font-medium text-gray-300 mb-2">
                             Paket <span className="text-rose-400">*</span>
@@ -322,7 +312,7 @@ const AddIncomeModal = ({ isOpen, onClose }) => {
                                     className={`w-full px-4 py-3 pl-11 rounded-xl bg-dark-tertiary/50 border ${errors.packageId ? 'border-rose-500' : 'border-surface-border'} text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 transition-all duration-200 appearance-none`}
                                     {...register('packageId', { required: 'Paket wajib dipilih' })}
                                 >
-                                    <option value="">Pilih Paket</option>
+                                    <option value="">Pilih Paket Terlebih Dahulu</option>
                                     {packages.length === 0 ? (
                                         <option value="" disabled>Tidak ada paket tersedia</option>
                                     ) : (
@@ -334,9 +324,107 @@ const AddIncomeModal = ({ isOpen, onClose }) => {
                                     )}
                                 </select>
                             )}
+                            <ChevronDown className="absolute right-3.5 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
                         </div>
                         {errors.packageId && (
                             <p className="text-rose-400 text-xs mt-1">{errors.packageId.message}</p>
+                        )}
+                    </div>
+
+                    {/* Jamaah Selection with Search - REQUIRED */}
+                    <div className="w-full" ref={jamaahDropdownRef}>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">
+                            Jamaah <span className="text-rose-400">*</span>
+                        </label>
+                        <div className="relative">
+                            <Search className="absolute left-3.5 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500 z-10" />
+                            {/* Hidden input for form validation */}
+                            <input type="hidden" {...register('jamaahId', { required: 'Jamaah wajib dipilih' })} />
+
+                            {!watchedPackageId ? (
+                                <div className="w-full px-4 py-3 pl-11 rounded-xl bg-dark-tertiary/30 border border-surface-border text-gray-500 cursor-not-allowed">
+                                    Pilih paket terlebih dahulu
+                                </div>
+                            ) : jamaahLoading ? (
+                                <div className="w-full px-4 py-3 pl-11 rounded-xl bg-dark-tertiary/50 border border-surface-border flex items-center gap-2">
+                                    <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+                                    <span className="text-gray-500">Memuat jamaah...</span>
+                                </div>
+                            ) : jamaahError ? (
+                                <div className="w-full px-4 py-3 pl-11 rounded-xl bg-dark-tertiary/50 border border-rose-500/50 flex items-center justify-between gap-2 text-rose-400">
+                                    <div className="flex items-center gap-2">
+                                        <AlertCircle className="w-4 h-4" />
+                                        <span className="text-sm">Gagal memuat</span>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => refetchJamaah()}
+                                        className="text-xs underline hover:text-rose-300"
+                                    >
+                                        Coba lagi
+                                    </button>
+                                </div>
+                            ) : (
+                                <>
+                                    <input
+                                        type="text"
+                                        value={jamaahSearch}
+                                        onChange={(e) => {
+                                            setJamaahSearch(e.target.value);
+                                            setShowJamaahDropdown(true);
+                                            // Clear selection if user types (unless typing matches selected)
+                                            if (watchedJamaahId) {
+                                                const selected = jamaahList.find(j => j.id === watchedJamaahId);
+                                                if (selected && e.target.value !== selected.name) {
+                                                    setValue('jamaahId', '');
+                                                }
+                                            }
+                                        }}
+                                        onFocus={() => setShowJamaahDropdown(true)}
+                                        placeholder={jamaahList.length === 0 ? "Tidak ada jamaah di paket ini" : "Ketik untuk mencari jamaah..."}
+                                        className={`w-full px-4 py-3 pl-11 pr-10 rounded-xl bg-dark-tertiary/50 border ${errors.jamaahId ? 'border-rose-500' : 'border-surface-border'} text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 transition-all duration-200`}
+                                        disabled={jamaahList.length === 0}
+                                    />
+                                    <ChevronDown className={`absolute right-3.5 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none transition-transform ${showJamaahDropdown ? 'rotate-180' : ''}`} />
+
+                                    {/* Dropdown list */}
+                                    {showJamaahDropdown && filteredJamaahList.length > 0 && (
+                                        <div className="absolute z-50 w-full mt-1 max-h-60 overflow-auto rounded-xl bg-dark-secondary border border-surface-border shadow-xl">
+                                            {filteredJamaahList.map((j) => (
+                                                <button
+                                                    key={j.id}
+                                                    type="button"
+                                                    onClick={() => handleJamaahSelect(j)}
+                                                    className={`w-full px-4 py-3 text-left hover:bg-surface-glass transition-colors flex items-center justify-between ${watchedJamaahId === j.id ? 'bg-primary-500/20 text-primary-400' : 'text-gray-100'}`}
+                                                >
+                                                    <div>
+                                                        <span className="font-medium">{j.name}</span>
+                                                        <span className="text-gray-500 text-sm ml-2">{j.phone || '-'}</span>
+                                                    </div>
+                                                    {j.remainingAmount && parseFloat(j.remainingAmount) > 0 && (
+                                                        <span className="text-xs text-amber-400">
+                                                            Sisa: {formatCurrency(parseFloat(j.remainingAmount))}
+                                                        </span>
+                                                    )}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {/* No results message */}
+                                    {showJamaahDropdown && jamaahSearch && filteredJamaahList.length === 0 && jamaahList.length > 0 && (
+                                        <div className="absolute z-50 w-full mt-1 rounded-xl bg-dark-secondary border border-surface-border shadow-xl p-4 text-center text-gray-500">
+                                            Tidak ditemukan jamaah "{jamaahSearch}"
+                                        </div>
+                                    )}
+                                </>
+                            )}
+                        </div>
+                        {errors.jamaahId && (
+                            <p className="text-rose-400 text-xs mt-1">{errors.jamaahId.message}</p>
+                        )}
+                        {watchedPackageId && jamaahList.length === 0 && !jamaahLoading && (
+                            <p className="text-amber-400 text-xs mt-1">Belum ada jamaah terdaftar di paket ini</p>
                         )}
                     </div>
 

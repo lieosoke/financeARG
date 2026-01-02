@@ -9,6 +9,7 @@ import Button from '../../components/atoms/Button';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { toast } from 'react-hot-toast';
+import { Table, Thead, Tbody, Tr, Th, Td, Tfoot } from '../../components/atoms/Table';
 
 const BudgetActualPage = () => {
     const [selectedPaket, setSelectedPaket] = useState('all');
@@ -244,83 +245,78 @@ const BudgetActualPage = () => {
                             <p className="text-gray-500">Belum ada data budget vs actual</p>
                         </div>
                     ) : (
-                        <div className="overflow-x-auto -mx-6 px-6">
-                            <table className="table-dark w-full">
-                                <thead>
-                                    <tr>
-                                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                                            Paket
-                                        </th>
-                                        <th className="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                                            Budget
-                                        </th>
-                                        <th className="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                                            Aktual
-                                        </th>
-                                        <th className="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                                            Variance
-                                        </th>
-                                        <th className="px-4 py-3 text-center text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                                            Status
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-surface-border">
-                                    {filteredData.map((item) => (
-                                        <tr key={item.packageId} className="hover:bg-surface-glass transition-colors">
-                                            <td className="px-4 py-4">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-8 h-8 bg-surface-glass rounded-lg flex items-center justify-center">
-                                                        <Package className="w-4 h-4 text-gray-400" />
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-sm font-medium text-white">{item.packageName}</p>
-                                                        <p className="text-xs text-gray-500">{item.packageCode}</p>
-                                                    </div>
+                        <Table>
+                            <Thead>
+                                <Tr>
+                                    <Th>Paket</Th>
+                                    <Th align="center">Jamaah</Th>
+                                    <Th align="right">Budget</Th>
+                                    <Th align="right">Aktual</Th>
+                                    <Th align="right">Variance</Th>
+                                    <Th align="center">Status</Th>
+                                </Tr>
+                            </Thead>
+                            <Tbody>
+                                {filteredData.map((item) => (
+                                    <Tr key={item.packageId}>
+                                        <Td>
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 bg-surface-glass rounded-lg flex items-center justify-center">
+                                                    <Package className="w-4 h-4 text-gray-400" />
                                                 </div>
-                                            </td>
-                                            <td className="px-4 py-4 text-right">
-                                                <span className="font-tabular text-blue-400">{formatCurrency(item.estimatedCost)}</span>
-                                            </td>
-                                            <td className="px-4 py-4 text-right">
-                                                <span className="font-tabular text-purple-400">{formatCurrency(item.actualCost)}</span>
-                                            </td>
-                                            <td className="px-4 py-4 text-right">
-                                                <span className={`font-tabular font-semibold ${item.isUnderBudget ? 'text-emerald-400' : 'text-rose-400'}`}>
-                                                    {item.isUnderBudget ? '+' : ''}{formatCurrency(item.variance)}
-                                                </span>
-                                            </td>
-                                            <td className="px-4 py-4 text-center">
-                                                <Badge variant={item.isUnderBudget ? 'success' : 'danger'}>
-                                                    {item.isUnderBudget ? 'Under' : 'Over'} ({Math.abs(item.variancePercent).toFixed(1)}%)
-                                                </Badge>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                                <tfoot className="border-t-2 border-surface-border">
-                                    <tr className="bg-dark-tertiary/50">
-                                        <td className="px-4 py-4 font-semibold text-white">Total</td>
-                                        <td className="px-4 py-4 text-right font-tabular font-semibold text-blue-400">
-                                            {formatCurrency(totals.budget)}
-                                        </td>
-                                        <td className="px-4 py-4 text-right font-tabular font-semibold text-purple-400">
-                                            {formatCurrency(totals.actual)}
-                                        </td>
-                                        <td className="px-4 py-4 text-right font-tabular font-bold">
-                                            <span className={totals.variance >= 0 ? 'text-emerald-400' : 'text-rose-400'}>
-                                                {totals.variance >= 0 ? '+' : ''}{formatCurrency(totals.variance)}
+                                                <div>
+                                                    <p className="text-sm font-medium text-white">{item.packageName}</p>
+                                                    <p className="text-xs text-gray-500">{item.packageCode}</p>
+                                                </div>
+                                            </div>
+                                        </Td>
+                                        <Td align="center">
+                                            <span className="text-sm text-gray-300">{item.jamaahCount || 0}</span>
+                                        </Td>
+                                        <Td align="right">
+                                            <span className="font-tabular text-blue-400">{formatCurrency(item.estimatedCost)}</span>
+                                        </Td>
+                                        <Td align="right">
+                                            <span className="font-tabular text-purple-400">{formatCurrency(item.actualCost)}</span>
+                                        </Td>
+                                        <Td align="right">
+                                            <span className={`font-tabular font-semibold ${item.isUnderBudget ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                                {item.isUnderBudget ? '+' : ''}{formatCurrency(item.variance)}
                                             </span>
-                                        </td>
-                                        <td className="px-4 py-4 text-center">
-                                            <Badge variant={totals.variance >= 0 ? 'success' : 'danger'}>
-                                                {totals.variance >= 0 ? 'Under Budget' : 'Over Budget'}
+                                        </Td>
+                                        <Td align="center">
+                                            <Badge variant={item.isUnderBudget ? 'success' : 'danger'}>
+                                                {item.isUnderBudget ? 'Under' : 'Over'} ({Math.abs(item.variancePercent).toFixed(1)}%)
                                             </Badge>
-                                        </td>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
+                                        </Td>
+                                    </Tr>
+                                ))}
+                            </Tbody>
+                            <Tfoot>
+                                <Tr className="bg-dark-tertiary/50">
+                                    <Td className="font-semibold text-white">Total</Td>
+                                    <Td align="center" className="font-tabular text-gray-400">
+                                        {filteredData.reduce((sum, p) => sum + (p.jamaahCount || 0), 0)}
+                                    </Td>
+                                    <Td align="right" className="font-tabular font-semibold text-blue-400">
+                                        {formatCurrency(totals.budget)}
+                                    </Td>
+                                    <Td align="right" className="font-tabular font-semibold text-purple-400">
+                                        {formatCurrency(totals.actual)}
+                                    </Td>
+                                    <Td align="right" className="font-tabular font-bold">
+                                        <span className={totals.variance >= 0 ? 'text-emerald-400' : 'text-rose-400'}>
+                                            {totals.variance >= 0 ? '+' : ''}{formatCurrency(totals.variance)}
+                                        </span>
+                                    </Td>
+                                    <Td align="center">
+                                        <Badge variant={totals.variance >= 0 ? 'success' : 'danger'}>
+                                            {totals.variance >= 0 ? 'Under Budget' : 'Over Budget'}
+                                        </Badge>
+                                    </Td>
+                                </Tr>
+                            </Tfoot>
+                        </Table>
                     )}
                 </Card>
             </div>

@@ -116,6 +116,8 @@ export const reportService = {
 
     /**
      * Get Budget vs Actual Report per Package
+     * Budget = jumlah jamaah terdaftar × harga per orang
+     * Actual = total transaksi pengeluaran
      */
     async getBudgetActual(filters?: {
         packageId?: string;
@@ -126,6 +128,20 @@ export const reportService = {
 
         const results = await Promise.all(
             allPackages.map(async (pkg) => {
+                // Get jamaah count for this package
+                const jamaahCountResult = await db
+                    .select({
+                        count: sql<number>`COUNT(*)`,
+                    })
+                    .from(jamaah)
+                    .where(eq(jamaah.packageId, pkg.id));
+
+                const jamaahCount = jamaahCountResult[0]?.count || 0;
+                const pricePerPerson = parseFloat(pkg.pricePerPerson?.toString() || '0');
+
+                // Budget = jumlah jamaah × harga per orang
+                const estimatedCost = jamaahCount * pricePerPerson;
+
                 // Get actual expenses from transactions
                 const expenseResult = await db
                     .select({
@@ -154,7 +170,6 @@ export const reportService = {
                     )
                     .groupBy(transactions.expenseCategory);
 
-                const estimatedCost = parseFloat(pkg.estimatedCost?.toString() || '0');
                 const actualCost = parseFloat(expenseResult[0]?.total || '0');
                 const variance = estimatedCost - actualCost;
                 const variancePercent = estimatedCost > 0
@@ -170,6 +185,8 @@ export const reportService = {
                     departureDate: pkg.departureDate,
                     totalSeats: pkg.totalSeats,
                     bookedSeats: pkg.bookedSeats || 0,
+                    jamaahCount,
+                    pricePerPerson,
                     estimatedCost,
                     actualCost,
                     variance,

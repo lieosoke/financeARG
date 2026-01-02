@@ -78,11 +78,13 @@ const AddExpenseModal = ({ isOpen, onClose }) => {
     const categoryOptions = [
         { value: 'tiket_pesawat', label: 'Tiket Pesawat' },
         { value: 'hotel', label: 'Hotel' },
+        { value: 'hotel_transit', label: 'Hotel Transit' },
         { value: 'transport', label: 'Transport' },
         { value: 'visa', label: 'Visa' },
         { value: 'handling', label: 'Handling' },
         { value: 'muthawif', label: 'Muthawif' },
         { value: 'konsumsi', label: 'Konsumsi' },
+        { value: 'manasik', label: 'Manasik' },
         { value: 'lainnya', label: 'Lainnya' },
     ];
 

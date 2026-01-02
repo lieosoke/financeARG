@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Search, Plus, ArrowUpRight, ChevronLeft, ChevronRight, Loader2, Trash2, AlertCircle, RefreshCw, Wallet, CreditCard, Eye, Edit, Printer, FileText, Download } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Search, Plus, ArrowUpRight, ChevronLeft, ChevronRight, Loader2, Trash2, AlertCircle, RefreshCw, Wallet, CreditCard, Eye, Edit, Printer, FileText, Download, Filter, Calendar } from 'lucide-react';
 import toast from 'react-hot-toast';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -9,18 +9,24 @@ import Input from '../../components/atoms/Input';
 import Badge from '../../components/atoms/Badge';
 import { formatCurrency } from '../../utils/formatters';
 import { useIncomeTransactions, useDeleteTransaction } from '../../hooks/useTransactions';
-import { AddIncomeModal, EditIncomeModal, ViewIncomeModal, ImageModal } from '../../components/modals'; // Updated import
+import { usePackages } from '../../hooks/usePackages';
+import { Table, Thead, Tbody, Tr, Th, Td } from '../../components/atoms/Table';
+import { AddIncomeModal, EditIncomeModal, ViewIncomeModal, ImageModal } from '../../components/modals';
 import { formatDateToID } from '../../utils/dateUtils';
+import { transactionService } from '../../services/api/index';
 
 const PemasukanPage = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [filterCategory, setFilterCategory] = useState('all');
+    const [filterPackage, setFilterPackage] = useState('all');
+    const [filterDepartureDate, setFilterDepartureDate] = useState('');
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [showViewModal, setShowViewModal] = useState(false);
-    const [showImageModal, setShowImageModal] = useState(false); // New state
+    const [showImageModal, setShowImageModal] = useState(false);
+    const [showFilters, setShowFilters] = useState(false);
     const [selectedTransaction, setSelectedTransaction] = useState(null);
-    const [selectedImageUrl, setSelectedImageUrl] = useState(null); // New state
+    const [selectedImageUrl, setSelectedImageUrl] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
     const limit = 10;
 
@@ -29,10 +35,14 @@ const PemasukanPage = () => {
         page: currentPage,
         limit,
         ...(filterCategory !== 'all' && { incomeCategory: filterCategory }),
+        ...(filterPackage !== 'all' && { packageId: filterPackage }),
+        ...(searchQuery && { search: searchQuery }),
     };
 
     // Fetch data from API
     const { data: incomeData, isLoading, isError, error, refetch } = useIncomeTransactions(queryParams);
+    const { data: packagesData } = usePackages({ limit: 100 });
+
     const deleteMutation = useDeleteTransaction({
         onSuccess: () => {
             toast.success('Transaksi berhasil dihapus');
@@ -66,22 +76,40 @@ const PemasukanPage = () => {
     // Extract data with fallbacks
     const transactions = incomeData?.data || [];
     const pagination = incomeData?.pagination || { page: 1, limit: 10, total: 0, totalPages: 1 };
+    const packagesList = packagesData?.data || [];
 
-    // Filter locally for search (API may not support text search)
-    const filteredData = transactions.filter(item => {
-        if (!searchQuery) return true;
-        const searchLower = searchQuery.toLowerCase();
+    // Filter locally - primarily for Departure Date
+    const filteredData = useMemo(() => {
+        let result = transactions;
 
-        const jamaahName = item.jamaah?.name || '';
-        const packageName = item.package?.packageName || item.package?.name || ''; // handle both potential package name fields
-        const description = item.description || item.notes || '';
+        // Search fallback (if backend filtering fails or isn't used)
+        if (searchQuery && !queryParams.search) {
+            const searchLower = searchQuery.toLowerCase();
+            result = result.filter(item => {
+                const jamaahName = item.jamaah?.name || '';
+                const packageName = item.package?.packageName || item.package?.name || '';
+                const description = item.description || item.notes || '';
+                return (
+                    jamaahName.toLowerCase().includes(searchLower) ||
+                    packageName.toLowerCase().includes(searchLower) ||
+                    description.toLowerCase().includes(searchLower)
+                );
+            });
+        }
 
-        return (
-            jamaahName.toLowerCase().includes(searchLower) ||
-            packageName.toLowerCase().includes(searchLower) ||
-            description.toLowerCase().includes(searchLower)
-        );
-    });
+        // Filter by departure date
+        if (filterDepartureDate) {
+            result = result.filter(item => {
+                if (!item.package?.departureDate) return false;
+                const date = new Date(item.package.departureDate);
+                if (isNaN(date.getTime())) return false;
+                const depDate = date.toISOString().slice(0, 10);
+                return depDate === filterDepartureDate;
+            });
+        }
+
+        return result;
+    }, [transactions, searchQuery, filterDepartureDate, queryParams.search]);
 
     const totalIncome = filteredData.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
 
@@ -128,14 +156,115 @@ const PemasukanPage = () => {
         setCurrentPage(1);
     };
 
-    // --- Export Functions ---
-
-    const handlePrint = () => {
-        window.print();
+    const handleClearFilters = () => {
+        setSearchQuery('');
+        setFilterCategory('all');
+        setFilterPackage('all');
+        setFilterDepartureDate('');
+        setCurrentPage(1);
     };
 
-    const handleExportCSV = () => {
-        if (!filteredData.length) {
+    // --- Export Functions ---
+
+    const handlePrint = async () => {
+        const data = await fetchAllDataForExport();
+        if (!data.length) {
+            toast.error('Tidak ada data untuk dicetak');
+            return;
+        }
+
+        // Generate table rows
+        const tableRows = data.map((item, index) => `
+            <tr>
+                <td style="text-align: center;">${index + 1}</td>
+                <td>${item.transactionDate ? formatDateToID(item.transactionDate) : '-'}</td>
+                <td>${item.jamaah?.name || '-'}</td>
+                <td>${item.package?.packageName || item.package?.name || '-'}</td>
+                <td>${item.incomeCategory}</td>
+                <td>${item.paymentMethod}</td>
+                <td>${item.description || '-'}</td>
+                <td style="text-align: right;">${formatCurrency(parseFloat(item.amount) || 0)}</td>
+            </tr>
+        `).join('');
+
+        // Create print window content
+        const printContent = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Laporan Pemasukan</title>
+                <style>
+                    * { margin: 0; padding: 0; box-sizing: border-box; }
+                    body { font-family: Arial, sans-serif; padding: 20px; }
+                    h1 { text-align: center; font-size: 18pt; margin-bottom: 5px; }
+                    .subtitle { text-align: center; font-size: 10pt; color: #666; margin-bottom: 20px; }
+                    table { width: 100%; border-collapse: collapse; font-size: 9pt; }
+                    th, td { border: 1px solid #333; padding: 6px 8px; text-align: left; }
+                    th { background-color: #e5e5e5; font-weight: bold; text-transform: uppercase; font-size: 8pt; }
+                    tr:nth-child(even) { background-color: #f9f9f9; }
+                    @media print {
+                        @page { size: A4 landscape; margin: 10mm; }
+                    }
+                </style>
+            </head>
+            <body>
+                <h1>Laporan Pemasukan</h1>
+                <p class="subtitle">Dicetak pada: ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })} | Total: ${data.length} transaksi | Total Jumlah: ${formatCurrency(data.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0))}</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 40px; text-align: center;">No</th>
+                            <th>Tanggal</th>
+                            <th>Jamaah</th>
+                            <th>Paket</th>
+                            <th>Kategori</th>
+                            <th>Metode</th>
+                            <th>Keterangan</th>
+                            <th style="text-align: right;">Jumlah</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${tableRows}
+                    </tbody>
+                </table>
+            </body>
+            </html>
+        `;
+
+        // Open print window
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(printContent);
+        printWindow.document.close();
+        printWindow.focus();
+
+        // Wait for content to load then print
+        setTimeout(() => {
+            printWindow.print();
+            printWindow.close();
+        }, 250);
+    };
+
+    const fetchAllDataForExport = async () => {
+        const toastId = toast.loading('Sedang menyiapkan data export...');
+        try {
+            const exportParams = {
+                ...queryParams,
+                limit: 10000,
+                page: 1
+            };
+            const response = await transactionService.getIncome(exportParams);
+            toast.dismiss(toastId);
+            return response.data || [];
+        } catch (error) {
+            console.error(error);
+            toast.error('Gagal mengambil data untuk export', { id: toastId });
+            return [];
+        }
+    };
+
+    const handleExportCSV = async () => {
+        const data = await fetchAllDataForExport();
+        if (!data.length) {
             toast.error('Tidak ada data untuk diexport');
             return;
         }
@@ -143,14 +272,14 @@ const PemasukanPage = () => {
         const headers = ['Tanggal', 'Jamaah', 'Paket', 'Kategori', 'Metode', 'Jumlah', 'Keterangan'];
         const csvContent = [
             headers.join(','),
-            ...filteredData.map(item => [
+            ...data.map(item => [
                 item.transactionDate ? formatDateToID(item.transactionDate) : '-',
                 `"${item.jamaah?.name || '-'}"`,
                 `"${item.package?.packageName || item.package?.name || '-'}"`,
                 item.incomeCategory,
                 item.paymentMethod,
                 parseFloat(item.amount) || 0,
-                `"${item.description || ''}"`
+                `"${(item.description || '').replace(/"/g, '""')}"`
             ].join(','))
         ].join('\n');
 
@@ -166,39 +295,8 @@ const PemasukanPage = () => {
     };
 
     const handleExportPDF = () => {
-        if (!filteredData.length) {
-            toast.error('Tidak ada data untuk diexport');
-            return;
-        }
-
-        const doc = new jsPDF();
-
-        // Add Title
-        doc.setFontSize(18);
-        doc.text('Laporan Pemasukan', 14, 22);
-
-        doc.setFontSize(11);
-        doc.text(`Tanggal Cetak: ${formatDateToID(new Date())}`, 14, 30);
-        doc.text(`Total Pemasukan: ${formatCurrency(totalIncome)}`, 14, 36);
-
-        // Table
-        const tableColumn = ["Tanggal", "Jamaah", "Paket", "Kategori", "Metode", "Jumlah"];
-        const tableRows = filteredData.map(item => [
-            item.transactionDate ? formatDateToID(item.transactionDate) : '-',
-            item.jamaah?.name || '-',
-            item.package?.packageName || item.package?.name || '-',
-            item.incomeCategory,
-            item.paymentMethod,
-            formatCurrency(parseFloat(item.amount) || 0)
-        ]);
-
-        doc.autoTable({
-            head: [tableColumn],
-            body: tableRows,
-            startY: 44,
-        });
-
-        doc.save(`pemasukan_${new Date().toISOString().split('T')[0]}.pdf`);
+        handlePrint();
+        toast.info('Gunakan opsi "Save as PDF" di dialog print');
     };
 
     // Error state
@@ -212,10 +310,7 @@ const PemasukanPage = () => {
                     <div className="flex gap-4 justify-center">
                         <Button
                             variant="secondary"
-                            onClick={() => {
-                                setFilterCategory('all');
-                                setCurrentPage(1);
-                            }}
+                            onClick={handleClearFilters}
                         >
                             Reset Filter
                         </Button>
@@ -229,7 +324,7 @@ const PemasukanPage = () => {
     }
 
     return (
-        <div className="space-y-6 animate-fade-in">
+        <div className="space-y-6 animate-fade-in pb-10">
             {/* Page Header */}
             <div className="page-header flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
                 <div>
@@ -273,7 +368,7 @@ const PemasukanPage = () => {
                         </div>
                         <div className="text-right">
                             <p className="text-sm text-gray-500">
-                                {isLoading ? '...' : `${filteredData.length} transaksi`}
+                                {isLoading ? '...' : `${pagination.total} transaksi`}
                             </p>
                         </div>
                     </div>
@@ -283,27 +378,79 @@ const PemasukanPage = () => {
             {/* Filters - Hide on Print */}
             <div className="print:hidden">
                 <Card>
-                    <div className="flex flex-col lg:flex-row gap-4">
-                        <div className="flex-1">
-                            <Input
-                                placeholder="Cari nama jamaah atau paket..."
-                                icon={<Search className="w-4 h-4" />}
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                            />
-                        </div>
-                        <div className="flex gap-2 flex-wrap">
-                            {categories.map((cat) => (
+                    <div className="flex flex-col gap-4">
+                        <div className="flex flex-col lg:flex-row gap-4">
+                            <div className="flex-1">
+                                <Input
+                                    placeholder="Cari nama jamaah atau paket..."
+                                    icon={<Search className="w-4 h-4" />}
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                />
+                            </div>
+                            <div className="flex gap-2 flex-wrap items-center">
+                                {categories.map((cat) => (
+                                    <Button
+                                        key={cat.value}
+                                        variant={filterCategory === cat.value ? 'primary' : 'secondary'}
+                                        size="sm"
+                                        onClick={() => handleFilterChange(cat.value)}
+                                    >
+                                        {cat.label}
+                                    </Button>
+                                ))}
                                 <Button
-                                    key={cat.value}
-                                    variant={filterCategory === cat.value ? 'primary' : 'secondary'}
+                                    variant="secondary"
                                     size="sm"
-                                    onClick={() => handleFilterChange(cat.value)}
+                                    className={`!p-2.5 ${showFilters ? 'bg-primary-500/10 text-primary-400 border-primary-500/20' : ''}`}
+                                    onClick={() => setShowFilters(!showFilters)}
+                                    title="Filter Lanjutan"
                                 >
-                                    {cat.label}
+                                    <Filter className="w-4 h-4" />
                                 </Button>
-                            ))}
+                            </div>
                         </div>
+
+                        {/* Advanced Filters */}
+                        {showFilters && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4 bg-dark-tertiary/30 rounded-xl border border-surface-border animate-slide-down">
+                                <div>
+                                    <label className="text-xs font-medium text-gray-400 mb-1.5 block">Paket Umrah/Haji</label>
+                                    <select
+                                        value={filterPackage}
+                                        onChange={(e) => {
+                                            setFilterPackage(e.target.value);
+                                            setCurrentPage(1);
+                                        }}
+                                        className="w-full px-3 py-2 bg-dark-tertiary border border-surface-border rounded-lg text-sm text-gray-200 focus:outline-none focus:border-primary-500"
+                                    >
+                                        <option value="all">Semua Paket</option>
+                                        {packagesList.map(pkg => (
+                                            <option key={pkg.id} value={pkg.id}>
+                                                {pkg.name} ({pkg.code})
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="text-xs font-medium text-gray-400 mb-1.5 block">Tanggal Keberangkatan</label>
+                                    <input
+                                        type="date"
+                                        className="w-full px-3 py-2 bg-dark-tertiary border border-surface-border rounded-lg text-sm text-gray-200 focus:outline-none focus:border-primary-500"
+                                        value={filterDepartureDate}
+                                        onChange={(e) => {
+                                            setFilterDepartureDate(e.target.value);
+                                            setCurrentPage(1);
+                                        }}
+                                    />
+                                </div>
+                                <div className="flex justify-end items-end md:col-span-2 lg:col-span-1">
+                                    <Button variant="ghost" size="sm" onClick={handleClearFilters} className="text-rose-400 hover:text-rose-300">
+                                        Reset Filter
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </Card>
             </div>
@@ -326,60 +473,46 @@ const PemasukanPage = () => {
                 ) : (
                     <>
                         <div className="overflow-x-auto -mx-6 px-6">
-                            <table className="table-dark w-full">
-                                <thead>
-                                    <tr>
-                                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                                            Tanggal
-                                        </th>
-                                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                                            Jamaah
-                                        </th>
-                                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                                            Paket
-                                        </th>
-                                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                                            Kategori
-                                        </th>
-                                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                                            Metode
-                                        </th>
-                                        <th className="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                                            Jumlah
-                                        </th>
-                                        <th className="px-4 py-3 text-center text-xs font-semibold text-gray-400 uppercase tracking-wider print:hidden">
-                                            Aksi
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-surface-border">
+                            <Table>
+                                <Thead>
+                                    <Tr>
+                                        <Th>Tanggal</Th>
+                                        <Th>Jamaah</Th>
+                                        <Th>Paket</Th>
+                                        <Th>Kategori</Th>
+                                        <Th>Metode</Th>
+                                        <Th align="right">Jumlah</Th>
+                                        <Th align="center" className="print:hidden">Aksi</Th>
+                                    </Tr>
+                                </Thead>
+                                <Tbody>
                                     {filteredData.map((item) => (
-                                        <tr key={item.id} className="hover:bg-surface-glass transition-colors">
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-300">
+                                        <Tr key={item.id}>
+                                            <Td className="whitespace-nowrap text-sm text-gray-300">
                                                 {item.transactionDate
                                                     ? formatDateToID(item.transactionDate)
                                                     : '-'}
-                                            </td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-white">
+                                            </Td>
+                                            <Td className="whitespace-nowrap text-sm font-medium text-white">
                                                 {item.jamaah?.name || '-'}
-                                            </td>
-                                            <td className="px-4 py-4">
+                                            </Td>
+                                            <Td>
                                                 <span className="px-2 py-0.5 text-xs font-medium bg-surface-glass rounded text-gray-400">
                                                     {item.package?.packageName || item.package?.name || item.packageCode || '-'}
                                                 </span>
-                                            </td>
-                                            <td className="px-4 py-4 whitespace-nowrap">
+                                            </Td>
+                                            <Td className="whitespace-nowrap">
                                                 {getCategoryBadge(item.incomeCategory)}
-                                            </td>
-                                            <td className="px-4 py-4 whitespace-nowrap">
+                                            </Td>
+                                            <Td className="whitespace-nowrap">
                                                 {getPaymentMethodBadge(item.paymentMethod)}
-                                            </td>
-                                            <td className="px-4 py-4 text-right">
+                                            </Td>
+                                            <Td align="right">
                                                 <span className="font-tabular font-semibold text-emerald-400">
                                                     +{formatCurrency(parseFloat(item.amount) || 0)}
                                                 </span>
-                                            </td>
-                                            <td className="px-4 py-4 text-center print:hidden">
+                                            </Td>
+                                            <Td align="center" className="print:hidden">
                                                 <div className="flex items-center justify-center gap-2">
                                                     {(item.receiptUrl && (
                                                         <Button
@@ -425,11 +558,11 @@ const PemasukanPage = () => {
                                                         <Trash2 className="w-4 h-4" />
                                                     </Button>
                                                 </div>
-                                            </td>
-                                        </tr>
+                                            </Td>
+                                        </Tr>
                                     ))}
-                                </tbody>
-                            </table>
+                                </Tbody>
+                            </Table>
                         </div>
 
                         {/* Pagination - Hide on Print */}

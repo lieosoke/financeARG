@@ -78,6 +78,13 @@
       "when": 1767169003358,
       "tag": "0010_fast_brood",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1767313038381,
+      "tag": "0011_tough_omega_red",
+      "breakpoints": true
     }
   ]
 }

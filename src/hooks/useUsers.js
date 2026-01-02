@@ -87,3 +87,46 @@ export const useDeleteUser = (options = {}) => {
         },
     });
 };
+
+/**
+ * Create user mutation
+ */
+export const useCreateUser = (options = {}) => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (data) => {
+            const response = await usersApi.create(data);
+            return response.data;
+        },
+        ...options,
+        onSuccess: (data, variables, ...args) => {
+            // Invalidate user list
+            queryClient.invalidateQueries({ queryKey: userKeys.lists() });
+            if (options.onSuccess) {
+                options.onSuccess(data, variables, ...args);
+            }
+        },
+    });
+};
+
+/**
+ * Update user password mutation
+ */
+export const useUpdatePassword = (options = {}) => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({ id, data }) => {
+            const response = await usersApi.updatePassword(id, data);
+            return response;
+        },
+        ...options,
+        onSuccess: (data, variables, ...args) => {
+            queryClient.invalidateQueries({ queryKey: userKeys.detail(variables.id) });
+            if (options.onSuccess) {
+                options.onSuccess(data, variables, ...args);
+            }
+        },
+    });
+};

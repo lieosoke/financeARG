@@ -45,6 +45,11 @@ export const AuthProvider = ({ children }) => {
         }
     }, []);
 
+    // Direct user state update (bypasses session cache)
+    const updateUser = useCallback((updates) => {
+        setUser(prev => prev ? { ...prev, ...updates } : prev);
+    }, []);
+
     const login = useCallback(async (email, password) => {
         setError(null);
         setLoading(true);
@@ -116,6 +121,7 @@ export const AuthProvider = ({ children }) => {
         register,
         logout,
         refetch: checkSession,
+        updateUser,
         signIn: authClient.signIn,
         signUp: authClient.signUp,
     };
@@ -128,3 +134,4 @@ export const AuthProvider = ({ children }) => {
 };
 
 export default AuthContext;
+

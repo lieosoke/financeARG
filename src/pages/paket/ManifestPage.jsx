@@ -3,6 +3,7 @@ import { FileText, Download, Printer, Users, Plane, Calendar, ChevronDown, Loade
 import Card from '../../components/molecules/Card';
 import Button from '../../components/atoms/Button';
 import Badge from '../../components/atoms/Badge';
+import { Table, Thead, Tbody, Tr, Th, Td } from '../../components/atoms/Table';
 import { usePackages } from '../../hooks/usePackages';
 import { useJamaahList } from '../../hooks/useJamaah';
 
@@ -277,48 +278,38 @@ const ManifestPage = () => {
                         </div>
                     ) : (
                         <div className="overflow-x-auto -mx-6 px-6">
-                            <table className="table-dark w-full">
-                                <thead>
-                                    <tr>
-                                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                                            No
-                                        </th>
-                                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                                            Nama Jamaah
-                                        </th>
-                                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                                            NIK
-                                        </th>
-                                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                                            Telepon
-                                        </th>
-                                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                                            Status Pembayaran
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-surface-border">
+                            <Table>
+                                <Thead>
+                                    <Tr>
+                                        <Th>No</Th>
+                                        <Th>Nama Jamaah</Th>
+                                        <Th>NIK</Th>
+                                        <Th>Telepon</Th>
+                                        <Th>Status Pembayaran</Th>
+                                    </Tr>
+                                </Thead>
+                                <Tbody>
                                     {manifestData.map((jamaah, index) => (
-                                        <tr key={jamaah.id} className="hover:bg-surface-glass transition-colors">
-                                            <td className="px-4 py-4 text-sm text-gray-400">
+                                        <Tr key={jamaah.id}>
+                                            <Td className="text-gray-400">
                                                 {index + 1}
-                                            </td>
-                                            <td className="px-4 py-4 text-sm font-medium text-white">
+                                            </Td>
+                                            <Td className="font-medium text-white">
                                                 {jamaah.name}
-                                            </td>
-                                            <td className="px-4 py-4 text-sm text-gray-400 font-mono">
+                                            </Td>
+                                            <Td className="text-gray-400 font-mono">
                                                 {jamaah.nik || '-'}
-                                            </td>
-                                            <td className="px-4 py-4 text-sm text-gray-400">
+                                            </Td>
+                                            <Td className="text-gray-400">
                                                 {jamaah.phone || '-'}
-                                            </td>
-                                            <td className="px-4 py-4">
+                                            </Td>
+                                            <Td>
                                                 {getStatusBadge(jamaah.paymentStatus)}
-                                            </td>
-                                        </tr>
+                                            </Td>
+                                        </Tr>
                                     ))}
-                                </tbody>
-                            </table>
+                                </Tbody>
+                            </Table>
                         </div>
                     )}
                 </Card>

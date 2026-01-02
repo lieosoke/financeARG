@@ -66,12 +66,20 @@ router.post('/', async (req: Request, res: Response) => {
             });
         }
 
+        // Validate password length
+        if (password.length < 6) {
+            return res.status(400).json({
+                success: false,
+                message: 'Password must be at least 6 characters long.',
+            });
+        }
+
         // Validate role
-        const validRoles = ['owner', 'finance', 'admin'];
+        const validRoles = ['owner', 'finance', 'admin', 'user'];
         if (role && !validRoles.includes(role)) {
             return res.status(400).json({
                 success: false,
-                message: 'Invalid role. Must be one of: owner, finance, admin',
+                message: 'Invalid role. Must be one of: owner, finance, admin, user',
             });
         }
 
@@ -84,63 +92,52 @@ router.post('/', async (req: Request, res: Response) => {
             });
         }
 
-        // Hash password using bcrypt (better-auth uses Scrypt but bcrypt works too)
-        const crypto = await import('crypto');
-        const hashPassword = (password: string): string => {
-            const salt = crypto.randomBytes(16).toString('hex');
-            const hash = crypto.scryptSync(password, salt, 64).toString('hex');
-            return `${salt}:${hash}`;
-        };
-        const hashedPassword = hashPassword(password);
-
-        // Generate unique ID
-        const userId = crypto.randomUUID();
-
-        // Create user
-        const [newUser] = await db.insert(users).values({
-            id: userId,
-            email,
-            name,
-            role: role || 'admin',
-            emailVerified: true,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        }).returning({
-            id: users.id,
-            email: users.email,
-            name: users.name,
-            role: users.role,
-            emailVerified: users.emailVerified,
-            image: users.image,
-            createdAt: users.createdAt,
-            updatedAt: users.updatedAt,
+        // Use Better Auth's internal API to create user with proper password hash
+        const { auth } = await import('../config/auth');
+        const result = await auth.api.signUpEmail({
+            body: {
+                email,
+                password,
+                name,
+            },
         });
 
-        // Store password in accounts table for credential-based auth
-        const { accounts } = await import('../db/schema');
-        await db.insert(accounts).values({
-            id: crypto.randomUUID(),
-            userId: newUser.id,
-            accountId: newUser.id,
-            providerId: 'credential',
-            password: hashedPassword,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        });
+        if (!result.user) {
+            return res.status(500).json({
+                success: false,
+                message: 'Failed to create user.',
+            });
+        }
+
+        // Update the role (Better Auth creates with default role)
+        const [updatedUser] = await db.update(users)
+            .set({ role: role || 'user' })
+            .where(eq(users.id, result.user.id))
+            .returning({
+                id: users.id,
+                email: users.email,
+                name: users.name,
+                role: users.role,
+                emailVerified: users.emailVerified,
+                image: users.image,
+                createdAt: users.createdAt,
+                updatedAt: users.updatedAt,
+            });
 
         return res.status(201).json({
             success: true,
-            data: newUser,
+            data: updatedUser,
             message: 'User created successfully',
         });
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error creating user:', error);
         return res.status(500).json({
             success: false,
-            message: 'Internal server error',
+            message: error.message || 'Internal server error',
         });
     }
 });
+
 
 // GET /users/:id - Get user by ID
 router.get('/:id', async (req: Request, res: Response) => {
@@ -211,7 +208,7 @@ router.put('/:id', async (req: Request, res: Response) => {
         }
 
         // Validate role - only owner can change roles
-        const validRoles = ['owner', 'finance', 'admin'];
+        const validRoles = ['owner', 'finance', 'admin', 'user'];
         if (role) {
             if (currentUser.role !== 'owner') {
                 return res.status(403).json({
@@ -222,7 +219,7 @@ router.put('/:id', async (req: Request, res: Response) => {
             if (!validRoles.includes(role)) {
                 return res.status(400).json({
                     success: false,
-                    message: 'Invalid role. Must be one of: owner, finance, admin',
+                    message: 'Invalid role. Must be one of: owner, finance, admin, user',
                 });
             }
         }
@@ -302,18 +299,12 @@ router.put('/:id/password', async (req: Request, res: Response) => {
             });
         }
 
-        const crypto = await import('crypto');
-        const hashPassword = (password: string): string => {
-            const salt = crypto.randomBytes(16).toString('hex');
-            const hash = crypto.scryptSync(password, salt, 64).toString('hex');
-            return `${salt}:${hash}`;
-        };
-
-        // If user is updating their own password, verify current password
+        // Get Better Auth context for password hashing
+        const { auth } = await import('../config/auth');
         const { accounts } = await import('../db/schema');
         const [account] = await db.select().from(accounts).where(eq(accounts.userId, id));
 
-        // If not owner force-resetting, we need verification
+        // If user is updating their own password, verify current password
         if (currentUser.id === id) {
             if (!currentPassword) {
                 return res.status(400).json({
@@ -329,10 +320,14 @@ router.put('/:id/password', async (req: Request, res: Response) => {
                 });
             }
 
-            const [salt, originalHash] = account.password.split(':');
-            const hash = crypto.scryptSync(currentPassword, salt, 64).toString('hex');
+            // Use Better Auth's password verification
+            const ctx = await auth.$context;
+            const isValid = await ctx.password.verify({
+                password: currentPassword,
+                hash: account.password,
+            });
 
-            if (hash !== originalHash) {
+            if (!isValid) {
                 return res.status(400).json({
                     success: false,
                     message: 'Incorrect current password.',
@@ -340,10 +335,12 @@ router.put('/:id/password', async (req: Request, res: Response) => {
             }
         }
 
-        // Update password
-        const hashedPassword = hashPassword(newPassword);
+        // Hash new password using Better Auth's internal context
+        const ctx = await auth.$context;
+        const hashedPassword = await ctx.password.hash(newPassword);
 
-        // Update or Insert account (handle case where account might be missing if imported externally? unlikely but good practice)
+        // Update password
+        const crypto = await import('crypto');
         if (account) {
             await db.update(accounts)
                 .set({
@@ -352,7 +349,7 @@ router.put('/:id/password', async (req: Request, res: Response) => {
                 })
                 .where(eq(accounts.userId, id));
         } else {
-            // Should verify if user exists first really, but assumption is id is valid from route
+            // Create new account if not exists
             await db.insert(accounts).values({
                 id: crypto.randomUUID(),
                 userId: id,
@@ -369,14 +366,15 @@ router.put('/:id/password', async (req: Request, res: Response) => {
             message: 'Password updated successfully',
         });
 
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error changing password:', error);
         return res.status(500).json({
             success: false,
-            message: 'Internal server error',
+            message: error.message || 'Internal server error',
         });
     }
 });
+
 
 // DELETE /users/:id - Delete user (owner only)
 router.delete('/:id', async (req: Request, res: Response) => {
@@ -400,28 +398,45 @@ router.delete('/:id', async (req: Request, res: Response) => {
             });
         }
 
-        const [deletedUser] = await db.delete(users)
-            .where(eq(users.id, id))
-            .returning({ id: users.id });
-
-        if (!deletedUser) {
+        // Check if user exists first
+        const [existingUser] = await db.select().from(users).where(eq(users.id, id));
+        if (!existingUser) {
             return res.status(404).json({
                 success: false,
                 message: 'User not found',
             });
         }
 
+        // Delete related records first (sessions, accounts, auditLogs, notifications)
+        const { sessions, accounts, auditLogs, notifications } = await import('../db/schema');
+
+        // Delete notifications for this user
+        await db.delete(notifications).where(eq(notifications.userId, id));
+
+        // Delete audit logs for this user (set userId to null instead of delete to preserve history)
+        await db.update(auditLogs).set({ userId: null }).where(eq(auditLogs.userId, id));
+
+        // Delete sessions for this user
+        await db.delete(sessions).where(eq(sessions.userId, id));
+
+        // Delete accounts for this user
+        await db.delete(accounts).where(eq(accounts.userId, id));
+
+        // Now delete the user
+        await db.delete(users).where(eq(users.id, id));
+
         return res.json({
             success: true,
             message: 'User deleted successfully',
         });
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error deleting user:', error);
         return res.status(500).json({
             success: false,
-            message: 'Internal server error',
+            message: error.message || 'Internal server error',
         });
     }
 });
+
 
 export default router;

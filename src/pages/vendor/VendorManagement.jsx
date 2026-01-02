@@ -7,6 +7,7 @@ import Button from '../../components/atoms/Button';
 import Input from '../../components/atoms/Input';
 import Badge from '../../components/atoms/Badge';
 import Modal from '../../components/molecules/Modal';
+import { Table, Thead, Tbody, Tr, Th, Td } from '../../components/atoms/Table';
 import { useVendors, useCreateVendor, useUpdateVendor, useDeleteVendor } from '../../hooks/useVendors';
 import { useForm } from 'react-hook-form';
 
@@ -59,10 +60,12 @@ const VendorManagement = () => {
         { value: 'all', label: 'Semua' },
         { value: 'airlines', label: 'Tiket Pesawat' },
         { value: 'hotel', label: 'Hotel' },
+        { value: 'hotel_transit', label: 'Hotel Transit' },
         { value: 'transport', label: 'Transport' },
         { value: 'visa', label: 'Visa' },
         { value: 'handling', label: 'Handling' },
         { value: 'catering', label: 'Konsumsi' },
+        { value: 'manasik', label: 'Manasik' },
         { value: 'other', label: 'Lainnya' },
     ];
 
@@ -70,10 +73,12 @@ const VendorManagement = () => {
         const config = {
             airlines: { variant: 'info', label: 'Tiket Pesawat' },
             hotel: { variant: 'primary', label: 'Hotel' },
+            hotel_transit: { variant: 'primary', label: 'Hotel Transit' },
             transport: { variant: 'warning', label: 'Transport' },
             visa: { variant: 'neutral', label: 'Visa' },
             handling: { variant: 'success', label: 'Handling' },
             catering: { variant: 'success', label: 'Konsumsi' },
+            manasik: { variant: 'info', label: 'Manasik' },
             other: { variant: 'neutral', label: 'Lainnya' },
         };
         const t = config[type] || { variant: 'neutral', label: type || 'Lainnya' };
@@ -193,93 +198,81 @@ const VendorManagement = () => {
                         <p className="text-gray-500">Belum ada data vendor</p>
                     </div>
                 ) : (
-                    <div className="overflow-x-auto -mx-6 px-6">
-                        <table className="table-dark w-full">
-                            <thead>
-                                <tr>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                                        Vendor
-                                    </th>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                                        Tipe
-                                    </th>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                                        Kontak
-                                    </th>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                                        Alamat
-                                    </th>
-                                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                                        Aksi
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-surface-border">
-                                {filteredData.map((vendor) => (
-                                    <tr key={vendor.id} className="hover:bg-surface-glass transition-colors">
-                                        <td className="px-4 py-4">
-                                            <div>
-                                                <p className="font-medium text-white">{vendor.name}</p>
-                                                <p className="text-xs text-gray-500">{vendor.contactPerson || '-'}</p>
-                                            </div>
-                                        </td>
-                                        <td className="px-4 py-4">
-                                            {getTypeBadge(vendor.type)}
-                                        </td>
-                                        <td className="px-4 py-4">
-                                            <div className="flex flex-col gap-1 text-sm">
-                                                {vendor.phone && (
-                                                    <span className="flex items-center gap-1 text-gray-300">
-                                                        <Phone className="w-3 h-3 text-gray-500" />
-                                                        {vendor.phone}
-                                                    </span>
-                                                )}
-                                                {vendor.email && (
-                                                    <span className="flex items-center gap-1 text-gray-400 text-xs">
-                                                        <Mail className="w-3 h-3" />
-                                                        {vendor.email}
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </td>
-                                        <td className="px-4 py-4 text-sm text-gray-400">
-                                            {vendor.address || '-'}
-                                        </td>
-                                        <td className="px-4 py-4 text-center">
-                                            <div className="flex items-center justify-center gap-1">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="!p-2 text-blue-400 hover:text-blue-300"
-                                                    title="Riwayat Keuangan"
-                                                    onClick={() => navigate(`/keuangan/hutang?search=${encodeURIComponent(vendor.name)}`)}
-                                                >
-                                                    <FileText className="w-4 h-4" />
-                                                </Button>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="!p-2"
-                                                    onClick={() => setEditingVendor(vendor)}
-                                                >
-                                                    <Edit2 className="w-4 h-4" />
-                                                </Button>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="!p-2 text-rose-400 hover:text-rose-300"
-                                                    onClick={() => handleDelete(vendor)}
-                                                    disabled={deleteMutation.isPending}
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </Button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                    <Table>
+                        <Thead>
+                            <Tr>
+                                <Th>Vendor</Th>
+                                <Th>Tipe</Th>
+                                <Th>Kontak</Th>
+                                <Th>Alamat</Th>
+                                <Th align="center">Aksi</Th>
+                            </Tr>
+                        </Thead>
+                        <Tbody>
+                            {filteredData.map((vendor) => (
+                                <Tr key={vendor.id}>
+                                    <Td>
+                                        <div>
+                                            <p className="font-medium text-white">{vendor.name}</p>
+                                            <p className="text-xs text-gray-500">{vendor.contactPerson || '-'}</p>
+                                        </div>
+                                    </Td>
+                                    <Td>
+                                        {getTypeBadge(vendor.type)}
+                                    </Td>
+                                    <Td>
+                                        <div className="flex flex-col gap-1 text-sm">
+                                            {vendor.phone && (
+                                                <span className="flex items-center gap-1 text-gray-300">
+                                                    <Phone className="w-3 h-3 text-gray-500" />
+                                                    {vendor.phone}
+                                                </span>
+                                            )}
+                                            {vendor.email && (
+                                                <span className="flex items-center gap-1 text-gray-400 text-xs">
+                                                    <Mail className="w-3 h-3" />
+                                                    {vendor.email}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </Td>
+                                    <Td className="text-gray-400">
+                                        {vendor.address || '-'}
+                                    </Td>
+                                    <Td align="center">
+                                        <div className="flex items-center justify-center gap-1">
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="!p-2 text-blue-400 hover:text-blue-300"
+                                                title="Riwayat Keuangan"
+                                                onClick={() => navigate(`/keuangan/hutang?search=${encodeURIComponent(vendor.name)}`)}
+                                            >
+                                                <FileText className="w-4 h-4" />
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="!p-2"
+                                                onClick={() => setEditingVendor(vendor)}
+                                            >
+                                                <Edit2 className="w-4 h-4" />
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="!p-2 text-rose-400 hover:text-rose-300"
+                                                onClick={() => handleDelete(vendor)}
+                                                disabled={deleteMutation.isPending}
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </Button>
+                                        </div>
+                                    </Td>
+                                </Tr>
+                            ))}
+                        </Tbody>
+                    </Table>
                 )}
 
                 {/* Pagination */}
@@ -385,10 +378,12 @@ const VendorFormModal = ({ isOpen, onClose, onSubmit, isLoading, vendor }) => {
                         >
                             <option value="airlines">Tiket Pesawat</option>
                             <option value="hotel">Hotel</option>
+                            <option value="hotel_transit">Hotel Transit</option>
                             <option value="transport">Transport</option>
                             <option value="visa">Visa</option>
                             <option value="handling">Handling</option>
                             <option value="catering">Konsumsi</option>
+                            <option value="manasik">Manasik</option>
                             <option value="other">Lainnya</option>
                         </select>
                     </div>

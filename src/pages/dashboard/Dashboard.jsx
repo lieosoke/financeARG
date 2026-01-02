@@ -8,6 +8,7 @@ import { useDashboardOverview, useRecentTransactions } from '../../hooks/useDash
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { formatDateToID } from '../../utils/dateUtils';
 import Button from '../../components/atoms/Button'; // Assuming Button component is available
+import { Table, Thead, Tbody, Tr, Th, Td } from '../../components/atoms/Table';
 
 const Dashboard = () => {
     const navigate = useNavigate();
@@ -242,74 +243,60 @@ const Dashboard = () => {
                         <p className="text-gray-500">Belum ada transaksi</p>
                     </div>
                 ) : (
-                    <div className="overflow-x-auto -mx-6 px-6">
-                        <table className="table-dark w-full">
-                            <thead>
-                                <tr>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                                        Tanggal
-                                    </th>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                                        Tipe
-                                    </th>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                                        Dari/Ke
-                                    </th>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                                        Paket
-                                    </th>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                                        Kategori
-                                    </th>
-                                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                                        Jumlah
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-surface-border">
-                                {recentTransactions.map((transaction) => (
-                                    <tr key={transaction.id} className="hover:bg-surface-glass transition-colors">
-                                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-300">
-                                            {transaction.transactionDate ? formatDateToID(transaction.transactionDate) : '-'}
-                                        </td>
-                                        <td className="px-4 py-4 whitespace-nowrap">
-                                            <span className={`
-                                                inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border
-                                                ${transaction.type === 'pemasukan'
-                                                    ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
-                                                    : 'bg-rose-500/20 text-rose-400 border-rose-500/30'
-                                                }
-                                            `}>
-                                                {transaction.type === 'pemasukan' ? (
-                                                    <ArrowUpRight className="w-3.5 h-3.5" />
-                                                ) : (
-                                                    <ArrowDownRight className="w-3.5 h-3.5" />
-                                                )}
-                                                {transaction.type === 'pemasukan' ? 'Pemasukan' : 'Pengeluaran'}
-                                            </span>
-                                        </td>
-                                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-200 font-medium">
-                                            {transaction.jamaah?.name || transaction.vendor?.name || '-'}
-                                        </td>
-                                        <td className="px-4 py-4 whitespace-nowrap">
-                                            <span className="px-2 py-0.5 text-xs font-medium bg-surface-glass rounded text-gray-400">
-                                                {transaction.package?.code || '-'}
-                                            </span>
-                                        </td>
-                                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-400">
-                                            {transaction.incomeCategory || transaction.expenseCategory || '-'}
-                                        </td>
-                                        <td className="px-4 py-4 whitespace-nowrap text-sm text-right font-tabular font-semibold">
-                                            <div className={`flex items-center justify-end gap-1 ${transaction.type === 'pemasukan' ? 'text-emerald-400' : 'text-rose-400'}`}>
-                                                <span>{transaction.type === 'pemasukan' ? '+' : '-'}</span>
-                                                <span>Rp {formatCurrency(Math.abs(parseFloat(transaction.amount) || 0), false)}</span>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                    <Table>
+                        <Thead>
+                            <Tr>
+                                <Th>Tanggal</Th>
+                                <Th>Tipe</Th>
+                                <Th>Dari/Ke</Th>
+                                <Th>Paket</Th>
+                                <Th>Kategori</Th>
+                                <Th align="right">Jumlah</Th>
+                            </Tr>
+                        </Thead>
+                        <Tbody>
+                            {recentTransactions.map((transaction) => (
+                                <Tr key={transaction.id}>
+                                    <Td className="whitespace-nowrap">
+                                        {transaction.transactionDate ? formatDateToID(transaction.transactionDate) : '-'}
+                                    </Td>
+                                    <Td className="whitespace-nowrap">
+                                        <span className={`
+                                            inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border
+                                            ${transaction.type === 'pemasukan'
+                                                ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                                                : 'bg-rose-500/20 text-rose-400 border-rose-500/30'
+                                            }
+                                        `}>
+                                            {transaction.type === 'pemasukan' ? (
+                                                <ArrowUpRight className="w-3.5 h-3.5" />
+                                            ) : (
+                                                <ArrowDownRight className="w-3.5 h-3.5" />
+                                            )}
+                                            {transaction.type === 'pemasukan' ? 'Pemasukan' : 'Pengeluaran'}
+                                        </span>
+                                    </Td>
+                                    <Td className="whitespace-nowrap font-medium text-gray-200">
+                                        {transaction.jamaah?.name || transaction.vendor?.name || '-'}
+                                    </Td>
+                                    <Td className="whitespace-nowrap">
+                                        <span className="px-2 py-0.5 text-xs font-medium bg-surface-glass rounded text-gray-400">
+                                            {transaction.package?.code || '-'}
+                                        </span>
+                                    </Td>
+                                    <Td className="whitespace-nowrap text-gray-400">
+                                        {transaction.incomeCategory || transaction.expenseCategory || '-'}
+                                    </Td>
+                                    <Td align="right" className="whitespace-nowrap font-tabular font-semibold">
+                                        <div className={`flex items-center justify-end gap-1 ${transaction.type === 'pemasukan' ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                            <span>{transaction.type === 'pemasukan' ? '+' : '-'}</span>
+                                            <span>Rp {formatCurrency(Math.abs(parseFloat(transaction.amount) || 0), false)}</span>
+                                        </div>
+                                    </Td>
+                                </Tr>
+                            ))}
+                        </Tbody>
+                    </Table>
                 )}
             </Card>
         </div>

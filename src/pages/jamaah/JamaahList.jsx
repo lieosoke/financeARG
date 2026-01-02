@@ -11,6 +11,7 @@ import { useJamaahList, useJamaahStats, useDeleteJamaah } from '../../hooks/useJ
 import { jamaahService } from '../../services/api/index';
 import { usePackages } from '../../hooks/usePackages';
 import { ViewJamaahModal } from '../../components/modals';
+import { Table, Thead, Tbody, Tr, Th, Td } from '../../components/atoms/Table';
 
 const JamaahList = () => {
     const [searchQuery, setSearchQuery] = useState('');
@@ -240,19 +241,109 @@ const JamaahList = () => {
     };
 
     const handlePrint = () => {
-        if (jamaahList.length === 0) {
+        if (filteredJamaahList.length === 0) {
             toast.error('Tidak ada data untuk dicetak');
             return;
         }
-        window.print();
+
+        // Helper functions
+        const calculateAge = (birthDate) => {
+            if (!birthDate || isNaN(new Date(birthDate).getTime())) return '-';
+            const today = new Date();
+            const birth = new Date(birthDate);
+            let age = today.getFullYear() - birth.getFullYear();
+            const monthDiff = today.getMonth() - birth.getMonth();
+            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+                age--;
+            }
+            return age;
+        };
+
+        const formatMaritalStatus = (status) => {
+            const statusMap = {
+                'single': 'Belum Menikah',
+                'married': 'Menikah',
+                'divorced': 'Cerai',
+                'widowed': 'Janda/Duda'
+            };
+            return statusMap[status] || status || '-';
+        };
+
+        // Generate table rows
+        const tableRows = filteredJamaahList.map((jamaah, index) => `
+            <tr>
+                <td>${index + 1}</td>
+                <td>${jamaah.name}</td>
+                <td>${jamaah.nik || '-'}</td>
+                <td>${jamaah.gender === 'male' ? 'Laki-laki' : jamaah.gender === 'female' ? 'Perempuan' : '-'}</td>
+                <td>${jamaah.dateOfBirth && !isNaN(new Date(jamaah.dateOfBirth).getTime()) ? new Date(jamaah.dateOfBirth).toLocaleDateString('id-ID') : '-'}</td>
+                <td>${calculateAge(jamaah.dateOfBirth)}</td>
+                <td>${formatMaritalStatus(jamaah.maritalStatus)}</td>
+                <td>${jamaah.phone || '-'}</td>
+                <td>${(jamaah.address || '-').replace(/\n/g, ' ')}</td>
+            </tr>
+        `).join('');
+
+        // Create print window content
+        const printContent = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Daftar Data Jamaah</title>
+                <style>
+                    * { margin: 0; padding: 0; box-sizing: border-box; }
+                    body { font-family: Arial, sans-serif; padding: 20px; }
+                    h1 { text-align: center; font-size: 18pt; margin-bottom: 5px; }
+                    .subtitle { text-align: center; font-size: 10pt; color: #666; margin-bottom: 20px; }
+                    table { width: 100%; border-collapse: collapse; font-size: 9pt; }
+                    th, td { border: 1px solid #333; padding: 6px 8px; text-align: left; }
+                    th { background-color: #e5e5e5; font-weight: bold; text-transform: uppercase; font-size: 8pt; }
+                    tr:nth-child(even) { background-color: #f9f9f9; }
+                    @media print {
+                        @page { size: A4 landscape; margin: 10mm; }
+                    }
+                </style>
+            </head>
+            <body>
+                <h1>Daftar Data Jamaah</h1>
+                <p class="subtitle">Dicetak pada: ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })} | Total: ${filteredJamaahList.length} jamaah</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>Nama</th>
+                            <th>NIK</th>
+                            <th>Jenis Kelamin</th>
+                            <th>Tanggal Lahir</th>
+                            <th>Umur</th>
+                            <th>Status Pernikahan</th>
+                            <th>Kontak</th>
+                            <th>Alamat</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${tableRows}
+                    </tbody>
+                </table>
+            </body>
+            </html>
+        `;
+
+        // Open print window
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(printContent);
+        printWindow.document.close();
+        printWindow.focus();
+
+        // Wait for content to load then print
+        setTimeout(() => {
+            printWindow.print();
+            printWindow.close();
+        }, 250);
     };
 
     const handleExportPDF = () => {
-        if (jamaahList.length === 0) {
-            toast.error('Tidak ada data untuk diekspor');
-            return;
-        }
-        window.print();
+        handlePrint();
         toast.info('Gunakan opsi "Save as PDF" di dialog print');
     };
 
@@ -277,100 +368,6 @@ const JamaahList = () => {
 
     return (
         <div className="space-y-6 animate-fade-in pb-10">
-            {/* Print Styles */}
-            <style>{`
-            @media print {
-                @page { size: A4 landscape; margin: 10mm; }
-
-                /* Reset main container styles */
-                html, body {
-                    height: auto !important;
-                    overflow: visible !important;
-                    background-color: white !important;
-                }
-
-                /* Hide everything by default */
-                body * {
-                    visibility: hidden;
-                }
-
-                /* Explicitly hide common UI elements */
-                .no-print, nav, aside, .page-header, .stats-overview,
-                .filter-toolbar, .filter-panel, .pagination-footer,
-                header, footer, [role="dialog"], button {
-                    display: none !important;
-                }
-
-                /* Make print area visible and position it */
-                .print-area, .print-area * {
-                    visibility: visible !important;
-                    color: black !important;
-                    background-color: transparent !important;
-                }
-
-                .print-area {
-                    display: block !important;
-                    position: absolute !important;
-                    left: 0 !important;
-                    top: 0 !important;
-                    width: 100% !important;
-                    margin: 0 !important;
-                    padding: 10px !important;
-                    background-color: white !important;
-                }
-
-                /* Hide screen-only table */
-                .no-print {
-                    display: none !important;
-                }
-
-                /* Show print-only table */
-                .print-table {
-                    display: table !important;
-                    width: 100% !important;
-                    border-collapse: collapse !important;
-                    font-size: 9pt;
-                    font-family: Arial, sans-serif;
-                }
-
-                .print-table th, .print-table td {
-                    border: 1px solid #000 !important;
-                    padding: 6px 8px;
-                    text-align: left;
-                }
-
-                .print-table th {
-                    background-color: #f0f0f0 !important;
-                    font-weight: bold;
-                    text-transform: uppercase;
-                    font-size: 8pt;
-                    -webkit-print-color-adjust: exact !important;
-                    print-color-adjust: exact !important;
-                }
-
-                .print-title {
-                    display: block !important;
-                    text-align: center;
-                    font-size: 14pt;
-                    font-weight: bold;
-                    margin-bottom: 15px;
-                }
-
-                /* Ensure background graphics are forced */
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-            }
-
-            /* Hide print-only elements on screen */
-            @media screen {
-                .print-table {
-                    display: none !important;
-                }
-                .print-title {
-                    display: none !important;
-                }
-            }
-            `}</style>
 
             {/* Header & Actions */}
             <div className="page-header flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -529,26 +526,24 @@ const JamaahList = () => {
                         </p>
                     </div>
                 ) : (
-                    <div className="overflow-x-auto print-area">
-                        <h2 className="hidden print:block text-xl font-bold mb-4">Data Jamaah</h2>
-                        {/* Main Table (Screen view) */}
-                        <table className="w-full no-print">
-                            <thead className="bg-dark-tertiary border-b border-surface-border">
-                                <tr>
-                                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Jamaah Info</th>
-                                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Kontak</th>
-                                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Paket</th>
-                                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Status Pembayaran</th>
-                                    <th className="px-6 py-4 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">Sisa Tagihan</th>
-                                    <th className="px-6 py-4 text-center text-xs font-semibold text-gray-400 uppercase tracking-wider w-[100px]">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-surface-border">
+                    <div className="overflow-x-auto">
+                        <Table>
+                            <Thead>
+                                <Tr>
+                                    <Th>Jamaah Info</Th>
+                                    <Th>Kontak</Th>
+                                    <Th>Paket</Th>
+                                    <Th>Status Pembayaran</Th>
+                                    <Th align="right">Sisa Tagihan</Th>
+                                    <Th align="center" className="w-[100px]">Aksi</Th>
+                                </Tr>
+                            </Thead>
+                            <Tbody>
                                 {filteredJamaahList.map((jamaah) => {
                                     const sisaBayar = parseFloat(jamaah.remainingAmount) || 0;
                                     return (
-                                        <tr key={jamaah.id} className="hover:bg-white/5 transition-colors group">
-                                            <td className="px-6 py-4">
+                                        <Tr key={jamaah.id} className="group">
+                                            <Td>
                                                 <div className="flex items-start gap-3">
                                                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-700 to-gray-800 flex items-center justify-center text-white font-medium text-sm">
                                                         {jamaah.name.charAt(0).toUpperCase()}
@@ -558,8 +553,8 @@ const JamaahList = () => {
                                                         <p className="text-xs text-gray-500 mt-0.5">NIK: {jamaah.nik || '-'}</p>
                                                     </div>
                                                 </div>
-                                            </td>
-                                            <td className="px-6 py-4">
+                                            </Td>
+                                            <Td>
                                                 <div className="flex flex-col gap-1.5">
                                                     <div className="flex items-center gap-2 text-xs text-gray-400">
                                                         <Phone className="w-3.5 h-3.5" />
@@ -570,8 +565,8 @@ const JamaahList = () => {
                                                         <span className="truncate max-w-[150px]" title={jamaah.address}>{jamaah.address || '-'}</span>
                                                     </div>
                                                 </div>
-                                            </td>
-                                            <td className="px-6 py-4">
+                                            </Td>
+                                            <Td>
                                                 <div className="flex flex-col">
                                                     <span className="text-sm text-gray-200">
                                                         {jamaah.package?.name || jamaah.packageName || '-'}
@@ -580,16 +575,16 @@ const JamaahList = () => {
                                                         {jamaah.package?.code || '-'}
                                                     </span>
                                                 </div>
-                                            </td>
-                                            <td className="px-6 py-4">
+                                            </Td>
+                                            <Td>
                                                 {getStatusBadge(jamaah.paymentStatus || 'dp')}
-                                            </td>
-                                            <td className="px-6 py-4 text-right">
+                                            </Td>
+                                            <Td align="right">
                                                 <span className={`text-sm font-medium font-tabular ${sisaBayar > 0 ? 'text-amber-400' : 'text-emerald-400'}`}>
                                                     {formatCurrency(sisaBayar)}
                                                 </span>
-                                            </td>
-                                            <td className="px-6 py-4">
+                                            </Td>
+                                            <Td align="center">
                                                 <div className="flex items-center justify-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
                                                     <Button variant="ghost" size="sm" className="!p-2 text-blue-400 hover:bg-blue-500/10" onClick={() => handleView(jamaah)}>
                                                         <Eye className="w-4 h-4" />
@@ -603,68 +598,12 @@ const JamaahList = () => {
                                                         <Trash2 className="w-4 h-4" />
                                                     </Button>
                                                 </div>
-                                            </td>
-                                        </tr>
+                                            </Td>
+                                        </Tr>
                                     );
                                 })}
-                            </tbody>
-                        </table>
-
-                        {/* Print-only Table with simplified columns */}
-                        <table className="print-table hidden print:table">
-                            <thead>
-                                <tr>
-                                    <th>No</th>
-                                    <th>Nama</th>
-                                    <th>NIK</th>
-                                    <th>Jenis Kelamin</th>
-                                    <th>Tanggal Lahir</th>
-                                    <th>Umur</th>
-                                    <th>Status Pernikahan</th>
-                                    <th>Kontak</th>
-                                    <th>Alamat</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {filteredJamaahList.map((jamaah, index) => {
-                                    // Calculate age
-                                    const calculateAge = (birthDate) => {
-                                        if (!birthDate || isNaN(new Date(birthDate).getTime())) return '-';
-                                        const today = new Date();
-                                        const birth = new Date(birthDate);
-                                        let age = today.getFullYear() - birth.getFullYear();
-                                        const monthDiff = today.getMonth() - birth.getMonth();
-                                        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-                                            age--;
-                                        }
-                                        return age;
-                                    };
-                                    // Format marital status
-                                    const formatMaritalStatus = (status) => {
-                                        const statusMap = {
-                                            'single': 'Belum Menikah',
-                                            'married': 'Menikah',
-                                            'divorced': 'Cerai',
-                                            'widowed': 'Janda/Duda'
-                                        };
-                                        return statusMap[status] || status || '-';
-                                    };
-                                    return (
-                                        <tr key={jamaah.id}>
-                                            <td>{index + 1}</td>
-                                            <td>{jamaah.name}</td>
-                                            <td>{jamaah.nik || '-'}</td>
-                                            <td>{jamaah.gender === 'male' ? 'Laki-laki' : jamaah.gender === 'female' ? 'Perempuan' : '-'}</td>
-                                            <td>{jamaah.dateOfBirth && !isNaN(new Date(jamaah.dateOfBirth).getTime()) ? new Date(jamaah.dateOfBirth).toLocaleDateString('id-ID') : '-'}</td>
-                                            <td>{calculateAge(jamaah.dateOfBirth)}</td>
-                                            <td>{formatMaritalStatus(jamaah.maritalStatus)}</td>
-                                            <td>{jamaah.phone || '-'}</td>
-                                            <td>{jamaah.address || '-'}</td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
+                            </Tbody>
+                        </Table>
                     </div>
                 )}
 

@@ -6,6 +6,7 @@ import { formatCurrency } from '../../utils/formatters';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useProfitLoss } from '../../hooks/useReports';
 import Button from '../../components/atoms/Button';
+import { Table, Thead, Tbody, Tr, Th, Td, Tfoot } from '../../components/atoms/Table';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
@@ -244,30 +245,20 @@ const LabaRugiPage = () => {
                         </div>
                     ) : (
                         <div className="overflow-x-auto -mx-6 px-6">
-                            <table className="table-dark w-full">
-                                <thead>
-                                    <tr>
-                                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                                            Paket
-                                        </th>
-                                        <th className="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                                            Pendapatan
-                                        </th>
-                                        <th className="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                                            Pengeluaran
-                                        </th>
-                                        <th className="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                                            Laba/Rugi
-                                        </th>
-                                        <th className="px-4 py-3 text-center text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                                            Margin
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-surface-border">
+                            <Table>
+                                <Thead>
+                                    <Tr>
+                                        <Th>Paket</Th>
+                                        <Th align="right">Pendapatan</Th>
+                                        <Th align="right">Pengeluaran</Th>
+                                        <Th align="right">Laba/Rugi</Th>
+                                        <Th align="center">Margin</Th>
+                                    </Tr>
+                                </Thead>
+                                <Tbody>
                                     {filteredData.map((item) => (
-                                        <tr key={item.packageId} className="hover:bg-surface-glass transition-colors">
-                                            <td className="px-4 py-4">
+                                        <Tr key={item.packageId}>
+                                            <Td>
                                                 <div className="flex items-center gap-3">
                                                     <div className="w-8 h-8 bg-surface-glass rounded-lg flex items-center justify-center">
                                                         <Package className="w-4 h-4 text-gray-400" />
@@ -277,46 +268,46 @@ const LabaRugiPage = () => {
                                                         <p className="text-xs text-gray-500">{item.packageCode}</p>
                                                     </div>
                                                 </div>
-                                            </td>
-                                            <td className="px-4 py-4 text-right">
+                                            </Td>
+                                            <Td align="right">
                                                 <span className="font-tabular text-emerald-400">{formatCurrency(item.totalIncome)}</span>
-                                            </td>
-                                            <td className="px-4 py-4 text-right">
+                                            </Td>
+                                            <Td align="right">
                                                 <span className="font-tabular text-rose-400">{formatCurrency(item.totalExpense)}</span>
-                                            </td>
-                                            <td className="px-4 py-4 text-right">
-                                                <span className={`font - tabular font - semibold ${item.isProfit ? 'text-primary-400' : 'text-rose-400'} `}>
+                                            </Td>
+                                            <Td align="right">
+                                                <span className={`font-tabular font-semibold ${item.isProfit ? 'text-primary-400' : 'text-rose-400'} `}>
                                                     {formatCurrency(item.profit)}
                                                 </span>
-                                            </td>
-                                            <td className="px-4 py-4 text-center">
+                                            </Td>
+                                            <Td align="center">
                                                 <Badge variant={item.margin >= 20 ? 'success' : item.margin >= 10 ? 'warning' : 'danger'}>
                                                     {item.margin}%
                                                 </Badge>
-                                            </td>
-                                        </tr>
+                                            </Td>
+                                        </Tr>
                                     ))}
-                                </tbody>
-                                <tfoot className="border-t-2 border-surface-border">
-                                    <tr className="bg-dark-tertiary/50">
-                                        <td className="px-4 py-4 font-semibold text-white">Total</td>
-                                        <td className="px-4 py-4 text-right font-tabular font-semibold text-emerald-400">
+                                </Tbody>
+                                <Tfoot>
+                                    <Tr className="bg-dark-tertiary/50">
+                                        <Td className="font-semibold text-white">Total</Td>
+                                        <Td align="right" className="font-tabular font-semibold text-emerald-400">
                                             {formatCurrency(totals.pendapatan)}
-                                        </td>
-                                        <td className="px-4 py-4 text-right font-tabular font-semibold text-rose-400">
+                                        </Td>
+                                        <Td align="right" className="font-tabular font-semibold text-rose-400">
                                             {formatCurrency(totals.pengeluaran)}
-                                        </td>
-                                        <td className="px-4 py-4 text-right font-tabular font-bold text-primary-400">
+                                        </Td>
+                                        <Td align="right" className="font-tabular font-bold text-primary-400">
                                             {formatCurrency(totals.labaRugi)}
-                                        </td>
-                                        <td className="px-4 py-4 text-center">
+                                        </Td>
+                                        <Td align="center">
                                             <Badge variant="primary">
                                                 {totals.pendapatan > 0 ? ((totals.labaRugi / totals.pendapatan) * 100).toFixed(1) : 0}%
                                             </Badge>
-                                        </td>
-                                    </tr>
-                                </tfoot>
-                            </table>
+                                        </Td>
+                                    </Tr>
+                                </Tfoot>
+                            </Table>
                         </div>
                     )}
                 </Card>

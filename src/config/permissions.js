@@ -8,6 +8,7 @@ export const ROLES = {
     OWNER: 'owner',
     FINANCE: 'finance',
     ADMIN: 'admin',
+    USER: 'user',
 };
 
 // Permission matrix per role
@@ -34,6 +35,12 @@ export const rolePermissions = {
         'keuangan:view',
         'laporan:view',
     ],
+    user: [
+        'dashboard',
+        'jamaah:view',
+        'paket:view',
+        'laporan:view',
+    ],
 };
 
 // Menu access configuration per role
@@ -41,6 +48,7 @@ export const menuAccess = {
     owner: ['dashboard', 'jamaah', 'paket', 'keuangan', 'vendor', 'laporan', 'settings'],
     finance: ['dashboard', 'jamaah', 'paket', 'keuangan', 'vendor', 'laporan'],
     admin: ['dashboard', 'jamaah', 'paket', 'keuangan', 'laporan'],
+    user: ['dashboard', 'jamaah', 'paket', 'laporan'],
 };
 
 // Role display configuration
@@ -48,6 +56,7 @@ export const roleConfig = {
     owner: { label: 'Owner', variant: 'primary', description: 'Full access to all features' },
     finance: { label: 'Finance', variant: 'warning', description: 'Manage financial transactions and reports' },
     admin: { label: 'Admin', variant: 'info', description: 'Manage users, packages, and jamaah' },
+    user: { label: 'User', variant: 'neutral', description: 'View-only access to basic features' },
 };
 
 /**
