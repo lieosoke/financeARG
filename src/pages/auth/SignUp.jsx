@@ -20,7 +20,7 @@ const SignUp = () => {
 
     // Fetch company settings for dynamic branding
     const { data: companySettingsData } = useCompanySettings();
-    const companyName = companySettingsData?.data?.name || 'Finance App';
+    const companyName = companySettingsData?.data?.name || 'ARG App';
 
     const handleChange = (e) => {
         const { name, value } = e.target;

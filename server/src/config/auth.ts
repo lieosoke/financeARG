@@ -41,7 +41,11 @@ export const auth = betterAuth({
         'http://localhost:3001',
         'http://127.0.0.1:5173',
         'http://127.0.0.1:5174',
-        process.env.FRONTEND_URL || 'http://localhost:5173',
+        'http://127.0.0.1:5174',
+        // Local network access
+        'http://192.168.1.31:5173',
+        'http://192.168.1.31:3001',
+        ...(process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',') : ['http://localhost:5173']),
     ],
 
     // Custom user fields

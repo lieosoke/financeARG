@@ -25,9 +25,14 @@ app.use(
                 return callback(null, true);
             }
 
-            // Allow configured frontend URL
-            const allowedOrigin = process.env.FRONTEND_URL || 'http://localhost:5173';
-            if (origin === allowedOrigin) {
+            // Allow local network IPs (e.g., 192.168.x.x)
+            if (origin.match(/^http:\/\/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+$/)) {
+                return callback(null, true);
+            }
+
+            // Allow configured frontend URL(s)
+            const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:5173').split(',');
+            if (allowedOrigins.includes(origin)) {
                 return callback(null, true);
             }
 

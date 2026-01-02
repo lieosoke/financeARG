@@ -29,7 +29,7 @@ const Sidebar = ({ isOpen, onClose }) => {
 
     // Fetch company settings for dynamic company name
     const { data: companySettingsData } = useCompanySettings();
-    const companyName = companySettingsData?.data?.name || 'Finance App';
+    const companyName = companySettingsData?.data?.name || 'ARG App';
 
     const allMenuItems = [
         {
