@@ -177,19 +177,19 @@ const ManifestPage = () => {
             <Card className={showPrintView ? 'no-print' : ''}>
                 <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
                     <div className="flex-1">
-                        <label className="block text-sm font-medium text-gray-300 mb-2">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Pilih Paket Keberangkatan
                         </label>
                         <div className="relative">
                             <Plane className="absolute left-3.5 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500" />
                             {packagesLoading ? (
-                                <div className="w-full px-4 py-3 pl-11 rounded-xl bg-dark-tertiary/50 border border-surface-border flex items-center gap-2">
+                                <div className="w-full px-4 py-3 pl-11 rounded-xl bg-gray-50 dark:bg-dark-tertiary/50 border border-gray-200 dark:border-surface-border flex items-center gap-2">
                                     <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
                                     <span className="text-gray-500">Memuat paket...</span>
                                 </div>
                             ) : (
                                 <select
-                                    className="w-full px-4 py-3 pl-11 rounded-xl bg-dark-tertiary/50 border border-surface-border text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 transition-all duration-200 appearance-none"
+                                    className="w-full px-4 py-3 pl-11 rounded-xl bg-gray-50 dark:bg-dark-tertiary/50 border border-gray-200 dark:border-surface-border text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 transition-all duration-200 appearance-none"
                                     value={selectedPaket}
                                     onChange={(e) => setSelectedPaket(e.target.value)}
                                 >
@@ -268,8 +268,8 @@ const ManifestPage = () => {
                         </div>
                     ) : manifestData.length === 0 ? (
                         <div className="text-center py-12">
-                            <Users className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-                            <h3 className="text-lg font-semibold text-white mb-2">Tidak ada jamaah</h3>
+                            <Users className="w-12 h-12 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Tidak ada jamaah</h3>
                             <p className="text-gray-500">
                                 {filterStatus === 'all'
                                     ? 'Belum ada jamaah terdaftar di paket ini'
@@ -291,16 +291,16 @@ const ManifestPage = () => {
                                 <Tbody>
                                     {manifestData.map((jamaah, index) => (
                                         <Tr key={jamaah.id}>
-                                            <Td className="text-gray-400">
+                                            <Td className="text-gray-600 dark:text-gray-400">
                                                 {index + 1}
                                             </Td>
-                                            <Td className="font-medium text-white">
+                                            <Td className="font-medium text-gray-900 dark:text-white">
                                                 {jamaah.name}
                                             </Td>
-                                            <Td className="text-gray-400 font-mono">
+                                            <Td className="text-gray-600 dark:text-gray-400 font-mono">
                                                 {jamaah.nik || '-'}
                                             </Td>
-                                            <Td className="text-gray-400">
+                                            <Td className="text-gray-600 dark:text-gray-400">
                                                 {jamaah.phone || '-'}
                                             </Td>
                                             <Td>
@@ -316,10 +316,10 @@ const ManifestPage = () => {
             ) : (
                 <Card className={showPrintView ? 'no-print' : ''}>
                     <div className="text-center py-12">
-                        <div className="w-16 h-16 mx-auto mb-4 bg-surface-glass rounded-2xl flex items-center justify-center">
-                            <FileText className="w-8 h-8 text-gray-500" />
+                        <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-surface-glass rounded-2xl flex items-center justify-center">
+                            <FileText className="w-8 h-8 text-gray-400 dark:text-gray-500" />
                         </div>
-                        <h3 className="text-lg font-medium text-white mb-2">Belum Ada Paket Dipilih</h3>
+                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Belum Ada Paket Dipilih</h3>
                         <p className="text-gray-500">Pilih paket keberangkatan untuk melihat manifest</p>
                     </div>
                 </Card>

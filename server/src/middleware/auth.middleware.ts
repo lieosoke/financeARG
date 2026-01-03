@@ -32,6 +32,12 @@ export const authMiddleware = async (
 ) => {
     try {
 
+        // For SSE/WebSockets where custom headers might not be possible,
+        // we accept token via query parameter and inject it into headers
+        if (req.query.token && !req.headers.authorization) {
+            req.headers.authorization = `Bearer ${req.query.token}`;
+        }
+
         const session = await auth.api.getSession({
             headers: fromNodeHeaders(req.headers),
         });

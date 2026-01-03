@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
     LayoutDashboard,
@@ -12,15 +12,16 @@ import {
     ChevronRight,
     X,
     Building2,
+    MessageCircle,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { canAccessMenu, getRoleConfig } from '../../config/permissions';
 import { useCompanySettings } from '../../hooks/useCompanySettings';
 import logo from '../../assets/images/logo.png';
-
 const Sidebar = ({ isOpen, onClose }) => {
     const location = useLocation();
     const [expandedMenu, setExpandedMenu] = useState({});
+
     const { user } = useAuth();
 
     // User role from context
@@ -38,6 +39,8 @@ const Sidebar = ({ isOpen, onClose }) => {
             icon: LayoutDashboard,
             path: '/dashboard',
         },
+
+        // ... (rest of items unchanged)
         {
             id: 'jamaah',
             label: 'Data Jamaah',
@@ -47,6 +50,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                 { label: 'Tambah Jamaah', path: '/jamaah/baru' },
             ],
         },
+        // ... (rest of configuration items)
         {
             id: 'paket',
             label: 'Manajemen Paket',
@@ -99,8 +103,12 @@ const Sidebar = ({ isOpen, onClose }) => {
         },
     ];
 
-    // Filter menu items based on user role
-    const menuItems = allMenuItems.filter(item => canAccessMenu(userRole, item.id));
+    // Filter menu items
+    // Chat doesn't need specific permission check, or default to accessible
+    const menuItems = allMenuItems.filter(item => {
+        if (item.id === 'chat') return true;
+        return canAccessMenu(userRole, item.id);
+    });
 
     const toggleSubmenu = (menuId) => {
         setExpandedMenu(prev => ({
@@ -138,27 +146,27 @@ const Sidebar = ({ isOpen, onClose }) => {
             <aside
                 className={`
                     fixed top-0 left-0 h-screen w-64 z-50
-                    bg-dark-secondary/90 backdrop-blur-2xl
-                    border-r border-surface-border
+                    bg-white dark:bg-dark-secondary/90 backdrop-blur-2xl
+                    border-r border-gray-200 dark:border-surface-border
                     transform transition-transform duration-300 ease-out
                     lg:translate-x-0
                     ${isOpen ? 'translate-x-0' : '-translate-x-full'}
                 `}
             >
                 {/* Logo Header */}
-                <div className="h-16 flex items-center justify-between px-5 border-b border-surface-border">
+                <div className="h-16 flex items-center justify-between px-5 border-b border-gray-200 dark:border-surface-border">
                     <Link to="/dashboard" className="flex items-center group">
                         <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-glow-emerald-sm group-hover:shadow-glow-emerald transition-shadow duration-300 overflow-hidden">
                             <img src={logo} alt="Logo" className="w-full h-full object-contain" />
                         </div>
                         <div className="ml-3">
-                            <span className="text-lg font-bold text-white font-display">{companyName}</span>
-                            <span className="block text-[10px] text-primary-400 font-medium tracking-wide">FINANCE</span>
+                            <span className="text-lg font-bold text-gray-900 dark:text-white font-display">{companyName}</span>
+                            <span className="block text-[10px] text-primary-600 dark:text-primary-400 font-medium tracking-wide">FINANCE</span>
                         </div>
                     </Link>
                     <button
                         onClick={onClose}
-                        className="lg:hidden p-2 rounded-lg text-gray-400 hover:text-white hover:bg-surface-glass transition-colors"
+                        className="lg:hidden p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-surface-glass transition-colors"
                     >
                         <X className="w-5 h-5" />
                     </button>
@@ -185,20 +193,20 @@ const Sidebar = ({ isOpen, onClose }) => {
                                                     w-full flex items-center justify-between px-3 py-2.5 rounded-xl
                                                     text-sm font-medium transition-all duration-200
                                                     ${isActive
-                                                        ? 'bg-surface-glass-active text-white'
-                                                        : 'text-gray-400 hover:bg-surface-glass hover:text-gray-200'
+                                                        ? 'bg-gray-100 dark:bg-surface-glass-active text-gray-900 dark:text-white'
+                                                        : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-surface-glass hover:text-gray-900 dark:hover:text-gray-200'
                                                     }
                                                 `}
                                             >
                                                 <div className="flex items-center">
-                                                    <Icon className={`w-5 h-5 mr-3 ${isActive ? 'text-primary-400' : ''}`} />
+                                                    <Icon className={`w-5 h-5 mr-3 ${isActive ? 'text-primary-600 dark:text-primary-400' : ''}`} />
                                                     <span>{item.label}</span>
                                                 </div>
                                                 <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
                                             </button>
 
                                             <div className={`overflow-hidden transition-all duration-200 ${isExpanded ? 'max-h-96 mt-1' : 'max-h-0'}`}>
-                                                <div className="ml-4 pl-4 border-l border-surface-border space-y-1">
+                                                <div className="ml-4 pl-4 border-l border-gray-200 dark:border-surface-border space-y-1">
                                                     {item.children.map((child) => (
                                                         <Link
                                                             key={child.path}
@@ -207,8 +215,8 @@ const Sidebar = ({ isOpen, onClose }) => {
                                                                 block px-3 py-2 rounded-lg text-sm
                                                                 transition-all duration-200
                                                                 ${isActiveMenu(child.path)
-                                                                    ? 'text-primary-400 font-medium bg-primary-500/10'
-                                                                    : 'text-gray-500 hover:text-gray-300 hover:bg-surface-glass'
+                                                                    ? 'text-primary-600 dark:text-primary-400 font-medium bg-primary-50 dark:bg-primary-500/10'
+                                                                    : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-surface-glass'
                                                                 }
                                                             `}
                                                             onClick={onClose}
@@ -220,22 +228,57 @@ const Sidebar = ({ isOpen, onClose }) => {
                                             </div>
                                         </>
                                     ) : (
-                                        <Link
-                                            to={item.path}
-                                            className={`
-                                                w-full flex items-center px-3 py-2.5 rounded-xl
-                                                text-sm font-medium transition-all duration-200
-                                                ${isActive
-                                                    ? 'menu-active text-white'
-                                                    : 'text-gray-400 hover:bg-surface-glass hover:text-gray-200'
-                                                }
-                                            `}
-                                            onClick={onClose}
-                                        >
-                                            <Icon className={`w-5 h-5 mr-3 ${isActive ? 'text-primary-400' : ''}`} />
-                                            <span>{item.label}</span>
-                                        </Link>
-                                    )}
+                                        item.isButton ? (
+                                            <button
+                                                onClick={() => {
+                                                    item.action();
+                                                    if (window.innerWidth < 1024) onClose();
+                                                }}
+                                                className={`
+                                                    w-full flex items-center justify-between px-3 py-2.5 rounded-xl
+                                                    text-sm font-medium transition-all duration-200
+                                                    ${isActive
+                                                        ? 'menu-active text-gray-900 dark:text-white'
+                                                        : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-surface-glass hover:text-gray-900 dark:hover:text-gray-200'
+                                                    }
+                                                `}
+                                            >
+                                                <div className="flex items-center">
+                                                    <Icon className={`w-5 h-5 mr-3 ${isActive ? 'text-primary-600 dark:text-primary-400' : ''}`} />
+                                                    <span>{item.label}</span>
+                                                </div>
+                                                {item.badge && (
+                                                    <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                                                        {item.badge}
+                                                    </span>
+                                                )}
+                                            </button>
+                                        ) : (
+                                            <Link
+                                                to={item.path}
+                                                className={`
+                                                    w-full flex items-center justify-between px-3 py-2.5 rounded-xl
+                                                    text-sm font-medium transition-all duration-200
+                                                    ${isActive
+                                                        ? 'menu-active text-gray-900 dark:text-white'
+                                                        : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-surface-glass hover:text-gray-900 dark:hover:text-gray-200'
+                                                    }
+                                                `}
+                                                onClick={onClose}
+                                            >
+                                                <div className="flex items-center">
+                                                    <Icon className={`w-5 h-5 mr-3 ${isActive ? 'text-primary-600 dark:text-primary-400' : ''}`} />
+                                                    <span>{item.label}</span>
+                                                </div>
+                                                {item.badge && (
+                                                    <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                                                        {item.badge}
+                                                    </span>
+                                                )}
+                                            </Link>
+                                        )
+                                    )
+                                    }
                                 </div>
                             );
                         })}
@@ -243,19 +286,19 @@ const Sidebar = ({ isOpen, onClose }) => {
                 </nav>
 
                 {/* User Profile */}
-                <div className="absolute bottom-0 left-0 right-0 border-t border-surface-border p-4 bg-dark-secondary/50 backdrop-blur-xl">
+                <div className="absolute bottom-0 left-0 right-0 border-t border-gray-200 dark:border-surface-border p-4 bg-gray-50 dark:bg-dark-secondary/50 backdrop-blur-xl">
                     <div className="flex items-center">
                         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center text-white font-semibold shadow-glow-emerald-sm">
                             {getInitials()}
                         </div>
                         <div className="ml-3 flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-white truncate">{user?.name || 'User'}</p>
+                            <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{user?.name || 'User'}</p>
                             <p className="text-xs text-gray-500">{roleInfo.label}</p>
                         </div>
                         <div className="w-2 h-2 rounded-full bg-primary-500 shadow-glow-emerald-sm"></div>
                     </div>
                 </div>
-            </aside>
+            </aside >
         </>
     );
 };

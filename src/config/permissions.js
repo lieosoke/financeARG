@@ -32,8 +32,6 @@ export const rolePermissions = {
         'dashboard',
         'jamaah:view', 'jamaah:create', 'jamaah:edit', 'jamaah:delete',
         'paket:view', 'paket:create', 'paket:edit', 'paket:delete',
-        'keuangan:view',
-        'laporan:view',
     ],
     user: [
         'dashboard',
@@ -47,7 +45,7 @@ export const rolePermissions = {
 export const menuAccess = {
     owner: ['dashboard', 'jamaah', 'paket', 'keuangan', 'vendor', 'laporan', 'settings'],
     finance: ['dashboard', 'jamaah', 'paket', 'keuangan', 'vendor', 'laporan'],
-    admin: ['dashboard', 'jamaah', 'paket', 'keuangan', 'laporan'],
+    admin: ['dashboard', 'jamaah', 'paket'],
     user: ['dashboard', 'jamaah', 'paket', 'laporan'],
 };
 

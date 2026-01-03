@@ -159,18 +159,18 @@ const AddExpenseModal = ({ isOpen, onClose }) => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Vendor Selection */}
                     <div className="w-full">
-                        <label className="block text-sm font-medium text-gray-300 mb-2">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Vendor
                         </label>
                         <div className="relative">
                             <Building2 className="absolute left-3.5 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500" />
                             {vendorsLoading ? (
-                                <div className="w-full px-4 py-3 pl-11 rounded-xl bg-dark-tertiary/50 border border-surface-border flex items-center gap-2">
+                                <div className="w-full px-4 py-3 pl-11 rounded-xl bg-gray-50 dark:bg-dark-tertiary/50 border border-gray-200 dark:border-surface-border flex items-center gap-2">
                                     <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
                                     <span className="text-gray-500">Memuat...</span>
                                 </div>
                             ) : vendorsError ? (
-                                <div className="w-full px-4 py-3 pl-11 rounded-xl bg-dark-tertiary/50 border border-rose-500/50 flex items-center justify-between gap-2 text-rose-400">
+                                <div className="w-full px-4 py-3 pl-11 rounded-xl bg-gray-50 dark:bg-dark-tertiary/50 border border-rose-500/50 flex items-center justify-between gap-2 text-rose-500 dark:text-rose-400">
                                     <div className="flex items-center gap-2">
                                         <AlertCircle className="w-4 h-4" />
                                         <span className="text-sm">Gagal memuat vendor</span>
@@ -178,14 +178,14 @@ const AddExpenseModal = ({ isOpen, onClose }) => {
                                     <button
                                         type="button"
                                         onClick={() => refetchVendors()}
-                                        className="text-xs underline hover:text-rose-300"
+                                        className="text-xs underline hover:text-rose-400 dark:hover:text-rose-300"
                                     >
                                         Coba lagi
                                     </button>
                                 </div>
                             ) : (
                                 <select
-                                    className="w-full px-4 py-3 pl-11 rounded-xl bg-dark-tertiary/50 border border-surface-border text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 transition-all duration-200 appearance-none"
+                                    className="w-full px-4 py-3 pl-11 rounded-xl bg-gray-50 dark:bg-dark-tertiary/50 border border-gray-200 dark:border-surface-border text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 transition-all duration-200 appearance-none"
                                     {...register('vendorId')}
                                 >
                                     <option value="">Pilih Vendor (opsional)</option>
@@ -205,18 +205,18 @@ const AddExpenseModal = ({ isOpen, onClose }) => {
 
                     {/* Package Selection */}
                     <div className="w-full">
-                        <label className="block text-sm font-medium text-gray-300 mb-2">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Paket
                         </label>
                         <div className="relative">
                             <Package className="absolute left-3.5 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500" />
                             {packagesLoading ? (
-                                <div className="w-full px-4 py-3 pl-11 rounded-xl bg-dark-tertiary/50 border border-surface-border flex items-center gap-2">
+                                <div className="w-full px-4 py-3 pl-11 rounded-xl bg-gray-50 dark:bg-dark-tertiary/50 border border-gray-200 dark:border-surface-border flex items-center gap-2">
                                     <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
                                     <span className="text-gray-500">Memuat...</span>
                                 </div>
                             ) : packagesError ? (
-                                <div className="w-full px-4 py-3 pl-11 rounded-xl bg-dark-tertiary/50 border border-rose-500/50 flex items-center justify-between gap-2 text-rose-400">
+                                <div className="w-full px-4 py-3 pl-11 rounded-xl bg-gray-50 dark:bg-dark-tertiary/50 border border-rose-500/50 flex items-center justify-between gap-2 text-rose-500 dark:text-rose-400">
                                     <div className="flex items-center gap-2">
                                         <AlertCircle className="w-4 h-4" />
                                         <span className="text-sm">Gagal memuat paket</span>
@@ -224,14 +224,14 @@ const AddExpenseModal = ({ isOpen, onClose }) => {
                                     <button
                                         type="button"
                                         onClick={() => refetchPackages()}
-                                        className="text-xs underline hover:text-rose-300"
+                                        className="text-xs underline hover:text-rose-400 dark:hover:text-rose-300"
                                     >
                                         Coba lagi
                                     </button>
                                 </div>
                             ) : (
                                 <select
-                                    className="w-full px-4 py-3 pl-11 rounded-xl bg-dark-tertiary/50 border border-surface-border text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 transition-all duration-200 appearance-none"
+                                    className="w-full px-4 py-3 pl-11 rounded-xl bg-gray-50 dark:bg-dark-tertiary/50 border border-gray-200 dark:border-surface-border text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 transition-all duration-200 appearance-none"
                                     {...register('packageId')}
                                 >
                                     <option value="">Pilih Paket (opsional)</option>
@@ -266,11 +266,11 @@ const AddExpenseModal = ({ isOpen, onClose }) => {
 
                     {/* Category */}
                     <div className="w-full">
-                        <label className="block text-sm font-medium text-gray-300 mb-2">
-                            Kategori <span className="text-rose-400">*</span>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Kategori <span className="text-rose-500 dark:text-rose-400">*</span>
                         </label>
                         <select
-                            className="w-full px-4 py-3 rounded-xl bg-dark-tertiary/50 border border-surface-border text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 transition-all duration-200 appearance-none"
+                            className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-dark-tertiary/50 border border-gray-200 dark:border-surface-border text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 transition-all duration-200 appearance-none"
                             {...register('expenseCategory', { required: 'Kategori wajib dipilih' })}
                         >
                             {categoryOptions.map((opt) => (
@@ -296,13 +296,13 @@ const AddExpenseModal = ({ isOpen, onClose }) => {
 
                     {/* Payment Method */}
                     <div className="w-full">
-                        <label className="block text-sm font-medium text-gray-300 mb-2">
-                            Metode Pembayaran <span className="text-rose-400">*</span>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Metode Pembayaran <span className="text-rose-500 dark:text-rose-400">*</span>
                         </label>
                         <div className="relative">
                             <CreditCard className="absolute left-3.5 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500" />
                             <select
-                                className="w-full px-4 py-3 pl-11 rounded-xl bg-dark-tertiary/50 border border-surface-border text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 transition-all duration-200 appearance-none"
+                                className="w-full px-4 py-3 pl-11 rounded-xl bg-gray-50 dark:bg-dark-tertiary/50 border border-gray-200 dark:border-surface-border text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 transition-all duration-200 appearance-none"
                                 {...register('paymentMethod', { required: 'Metode pembayaran wajib dipilih' })}
                             >
                                 {paymentMethodOptions.map((opt) => (
@@ -319,7 +319,7 @@ const AddExpenseModal = ({ isOpen, onClose }) => {
 
                     {/* Payment Proof Photo Upload */}
                     <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-gray-300 mb-2">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Bukti Pembayaran (Foto)
                         </label>
                         <div className="space-y-3">
@@ -334,7 +334,7 @@ const AddExpenseModal = ({ isOpen, onClose }) => {
                                     />
                                     <label
                                         htmlFor="payment-proof-upload"
-                                        className="flex items-center justify-center gap-2 w-full px-4 py-6 rounded-xl bg-dark-tertiary/50 border-2 border-dashed border-surface-border text-gray-400 hover:border-primary-500/50 hover:text-primary-400 cursor-pointer transition-all duration-200"
+                                        className="flex items-center justify-center gap-2 w-full px-4 py-6 rounded-xl bg-gray-50 dark:bg-dark-tertiary/50 border-2 border-dashed border-gray-300 dark:border-surface-border text-gray-500 dark:text-gray-400 hover:border-primary-500/50 hover:text-primary-500 dark:hover:text-primary-400 cursor-pointer transition-all duration-200"
                                     >
                                         <Upload className="w-5 h-5" />
                                         <div className="text-center">
@@ -344,7 +344,7 @@ const AddExpenseModal = ({ isOpen, onClose }) => {
                                     </label>
                                 </div>
                             ) : (
-                                <div className="relative rounded-xl overflow-hidden border border-surface-border bg-dark-tertiary/30">
+                                <div className="relative rounded-xl overflow-hidden border border-gray-200 dark:border-surface-border bg-gray-50 dark:bg-dark-tertiary/30">
                                     <img
                                         src={photoPreview}
                                         alt="Bukti Pembayaran"
@@ -376,13 +376,13 @@ const AddExpenseModal = ({ isOpen, onClose }) => {
 
                     {/* Description */}
                     <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-gray-300 mb-2">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Keterangan
                         </label>
                         <div className="relative">
                             <FileText className="absolute left-3.5 top-3.5 w-4 h-4 text-gray-500" />
                             <textarea
-                                className="w-full px-4 py-3 pl-11 rounded-xl bg-dark-tertiary/50 border border-surface-border text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 transition-all duration-200 resize-none"
+                                className="w-full px-4 py-3 pl-11 rounded-xl bg-gray-50 dark:bg-dark-tertiary/50 border border-gray-200 dark:border-surface-border text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 transition-all duration-200 resize-none"
                                 rows={3}
                                 placeholder="Keterangan tambahan..."
                                 {...register('description')}
@@ -392,7 +392,7 @@ const AddExpenseModal = ({ isOpen, onClose }) => {
                 </div>
 
                 {/* Actions */}
-                <div className="flex items-center justify-end gap-3 pt-4 border-t border-surface-border">
+                <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200 dark:border-surface-border">
                     <Button variant="secondary" onClick={onClose} type="button">
                         Batal
                     </Button>

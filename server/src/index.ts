@@ -6,6 +6,7 @@ import routes from './routes';
 import { errorHandler, notFoundHandler } from './middleware/error.middleware';
 import { auth } from './config/auth';
 import { toNodeHandler } from 'better-auth/node';
+import { schedulerService } from './services/scheduler.service';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -50,13 +51,8 @@ const corsOptions = {
     allowedHeaders: ['Content-Type', 'Authorization'],
 };
 
-// Apply CORS globally EXCEPT for auth routes which handle it themselves
-app.use((req, res, next) => {
-    if (req.path.startsWith('/api/v1/auth')) {
-        return next();
-    }
-    cors(corsOptions)(req, res, next);
-});
+// Apply CORS globally to all routes
+app.use(cors(corsOptions));
 
 // Body parsing
 app.use(express.json({ limit: '10mb' }));
@@ -100,6 +96,9 @@ app.listen(PORT, () => {
 📍 Health:    http://localhost:${PORT}/api/v1/health
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   `);
+
+    // Start the package status scheduler
+    schedulerService.start();
 });
 
 export default app;

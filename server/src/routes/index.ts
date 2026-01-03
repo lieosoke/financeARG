@@ -10,6 +10,7 @@ import userRoutes from './user.routes';
 import companyRoutes from './company.routes';
 import notificationRoutes from './notification.routes';
 import regionRoutes from './region.routes';
+import chatRoutes from './chat.routes';
 
 const router = Router();
 
@@ -34,6 +35,7 @@ router.use('/users', userRoutes);
 router.use('/company', companyRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/regions', regionRoutes);
+router.use('/chat', chatRoutes);
 
 export default router;
 

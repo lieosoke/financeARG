@@ -4,7 +4,7 @@ import { db } from './database';
 import * as schema from '../db/schema';
 
 export const auth = betterAuth({
-    baseURL: process.env.BETTER_AUTH_URL || 'http://192.168.1.31:3001', // Use IP for local network access
+    baseURL: process.env.BETTER_AUTH_URL || 'http://localhost:3001', // Use localhost for development
     basePath: '/api/v1/auth',
     database: drizzleAdapter(db, {
         provider: 'pg',

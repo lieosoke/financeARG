@@ -27,3 +27,9 @@ dist-ssr
 *.sln
 *.sw?
 testsprite_tests
+ecosystem.config.cjs
+depployment_guide.md
+start-production.bat    
+.agent
+.cursor
+.vscode

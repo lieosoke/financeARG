@@ -12,7 +12,7 @@ export default defineConfig(({ mode }) => {
     },
     define: {
       // Ensure env variables are properly injected
-      'import.meta.env.VITE_API_URL': JSON.stringify(env.VITE_API_URL || 'http://192.168.1.31:3001/api/v1'),
+      'import.meta.env.VITE_API_URL': JSON.stringify(env.VITE_API_URL || 'http://localhost:3001/api/v1'),
     },
   }
 })

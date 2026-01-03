@@ -372,8 +372,8 @@ const JamaahList = () => {
             {/* Header & Actions */}
             <div className="page-header flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-white tracking-tight">Data Jamaah</h1>
-                    <p className="text-gray-400 text-sm mt-1">Kelola pendaftaran dan status pembayaran</p>
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">Data Jamaah</h1>
+                    <p className="text-gray-500 text-sm mt-1">Kelola pendaftaran dan status pembayaran</p>
                 </div>
                 <div className="flex items-center gap-3">
                     <Link to="/jamaah/baru">
@@ -390,7 +390,7 @@ const JamaahList = () => {
                             <Users className="w-6 h-6 text-emerald-400" />
                         </div>
                         <div>
-                            <p className="text-gray-400 text-xs uppercase tracking-wider font-medium">Total Jamaah</p>
+                            <p className="text-emerald-100 text-xs uppercase tracking-wider font-medium">Total Jamaah</p>
                             <h4 className="text-2xl font-bold text-white mt-0.5">{totalJamaah}</h4>
                         </div>
                     </div>
@@ -401,7 +401,7 @@ const JamaahList = () => {
                             <CreditCard className="w-6 h-6 text-blue-400" />
                         </div>
                         <div>
-                            <p className="text-gray-400 text-xs uppercase tracking-wider font-medium">Total Lunas</p>
+                            <p className="text-blue-100 text-xs uppercase tracking-wider font-medium">Total Lunas</p>
                             <h4 className="text-2xl font-bold text-white mt-0.5">{stats.countByStatus?.lunas || 0}</h4>
                         </div>
                     </div>
@@ -412,7 +412,7 @@ const JamaahList = () => {
                             <Loader2 className="w-6 h-6 text-amber-400" />
                         </div>
                         <div>
-                            <p className="text-gray-400 text-xs uppercase tracking-wider font-medium">Belum Lunas</p>
+                            <p className="text-amber-100 text-xs uppercase tracking-wider font-medium">Belum Lunas</p>
                             <h4 className="text-2xl font-bold text-white mt-0.5">{belumLunasCount}</h4>
                         </div>
                     </div>
@@ -423,7 +423,7 @@ const JamaahList = () => {
                             <Calendar className="w-6 h-6 text-purple-400" />
                         </div>
                         <div>
-                            <p className="text-gray-400 text-xs uppercase tracking-wider font-medium">Keberangkatan</p>
+                            <p className="text-purple-100 text-xs uppercase tracking-wider font-medium">Keberangkatan</p>
                             <h4 className="text-lg font-bold text-white mt-0.5 truncate">{pagination.total} Data</h4>
                         </div>
                     </div>
@@ -439,20 +439,20 @@ const JamaahList = () => {
                         <input
                             type="text"
                             placeholder="Cari nama, NIK, atau no hp..."
-                            className="w-full pl-10 pr-4 py-2.5 bg-dark-tertiary rounded-lg border border-surface-border text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-primary-500 transition-colors"
+                            className="w-full pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-dark-tertiary rounded-lg border border-gray-200 dark:border-surface-border text-sm text-gray-900 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-primary-500 transition-colors"
                             value={searchQuery}
                             onChange={handleSearch}
                         />
                     </div>
                     <div className="flex items-center gap-2 overflow-x-auto pb-2 lg:pb-0">
-                        <div className="flex bg-dark-tertiary p-1 rounded-lg border border-surface-border">
+                        <div className="flex bg-gray-100 dark:bg-dark-tertiary p-1 rounded-lg border border-gray-200 dark:border-surface-border">
                             {['all', 'lunas', 'pending', 'dp'].map((tab) => (
                                 <button
                                     key={tab}
                                     onClick={() => handleFilterChange(tab)}
                                     className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${filterStatus === tab
-                                        ? 'bg-primary-600 text-white shadow-sm'
-                                        : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'
+                                        ? 'bg-white dark:bg-primary-600 text-gray-900 dark:text-white shadow-sm'
+                                        : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-white/50 dark:hover:bg-white/5'
                                         }`}
                                 >
                                     {tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -476,13 +476,13 @@ const JamaahList = () => {
 
                 {/* Advanced Filters Panel */}
                 {showFilters && (
-                    <div className="filter-panel p-4 bg-dark-tertiary/30 border-b border-surface-border grid grid-cols-1 md:grid-cols-3 gap-4 animate-slide-down">
+                    <div className="filter-panel p-4 bg-gray-50 dark:bg-dark-tertiary/30 border-b border-gray-200 dark:border-surface-border grid grid-cols-1 md:grid-cols-3 gap-4 animate-slide-down">
                         <div>
                             <label className="text-xs font-medium text-gray-400 mb-1.5 block">Paket Umrah/Haji</label>
                             <select
                                 value={filterPackage}
                                 onChange={handlePackageFilterChange}
-                                className="w-full px-3 py-2 bg-dark-tertiary border border-surface-border rounded-lg text-sm text-gray-200 focus:outline-none focus:border-primary-500"
+                                className="w-full px-3 py-2 bg-white dark:bg-dark-tertiary border border-gray-200 dark:border-surface-border rounded-lg text-sm text-gray-900 dark:text-gray-200 focus:outline-none focus:border-primary-500"
                             >
                                 <option value="all">Semua Paket</option>
                                 {packagesList.map(pkg => (
@@ -496,7 +496,7 @@ const JamaahList = () => {
                             <label className="text-xs font-medium text-gray-400 mb-1.5 block">Bulan Keberangkatan</label>
                             <input
                                 type="date"
-                                className="w-full px-3 py-2 bg-dark-tertiary border border-surface-border rounded-lg text-sm text-gray-200 focus:outline-none focus:border-primary-500"
+                                className="w-full px-3 py-2 bg-white dark:bg-dark-tertiary border border-gray-200 dark:border-surface-border rounded-lg text-sm text-gray-900 dark:text-gray-200 focus:outline-none focus:border-primary-500"
                                 value={filterDepartureDate}
                                 onChange={handleDepartureDateChange}
                             />
@@ -517,10 +517,10 @@ const JamaahList = () => {
                     </div>
                 ) : filteredJamaahList.length === 0 ? (
                     <div className="py-20 text-center">
-                        <div className="w-16 h-16 bg-dark-tertiary rounded-full flex items-center justify-center mx-auto mb-4">
-                            <Search className="w-8 h-8 text-gray-600" />
+                        <div className="w-16 h-16 bg-gray-100 dark:bg-dark-tertiary rounded-full flex items-center justify-center mx-auto mb-4">
+                            <Search className="w-8 h-8 text-gray-400 dark:text-gray-600" />
                         </div>
-                        <h3 className="text-lg font-medium text-white mb-1">Data Tidak Ditemukan</h3>
+                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-1">Data Tidak Ditemukan</h3>
                         <p className="text-gray-500 max-w-sm mx-auto">
                             Coba ubah kata kunci pencarian atau filter untuk menemukan data yang Anda cari.
                         </p>
@@ -545,11 +545,11 @@ const JamaahList = () => {
                                         <Tr key={jamaah.id} className="group">
                                             <Td>
                                                 <div className="flex items-start gap-3">
-                                                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-700 to-gray-800 flex items-center justify-center text-white font-medium text-sm">
+                                                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center text-gray-700 dark:text-white font-medium text-sm">
                                                         {jamaah.name.charAt(0).toUpperCase()}
                                                     </div>
                                                     <div>
-                                                        <p className="text-sm font-medium text-white group-hover:text-primary-400 transition-colors">{jamaah.name}</p>
+                                                        <p className="text-sm font-medium text-gray-900 dark:text-white group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">{jamaah.name}</p>
                                                         <p className="text-xs text-gray-500 mt-0.5">NIK: {jamaah.nik || '-'}</p>
                                                     </div>
                                                 </div>
@@ -568,7 +568,7 @@ const JamaahList = () => {
                                             </Td>
                                             <Td>
                                                 <div className="flex flex-col">
-                                                    <span className="text-sm text-gray-200">
+                                                    <span className="text-sm text-gray-700 dark:text-gray-200">
                                                         {jamaah.package?.name || jamaah.packageName || '-'}
                                                     </span>
                                                     <span className="text-xs text-gray-500 mt-0.5">
@@ -580,7 +580,7 @@ const JamaahList = () => {
                                                 {getStatusBadge(jamaah.paymentStatus || 'dp')}
                                             </Td>
                                             <Td align="right">
-                                                <span className={`text-sm font-medium font-tabular ${sisaBayar > 0 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                                                <span className={`text-sm font-medium font-tabular ${sisaBayar > 0 ? 'text-amber-500 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
                                                     {formatCurrency(sisaBayar)}
                                                 </span>
                                             </Td>
@@ -608,9 +608,9 @@ const JamaahList = () => {
                 )}
 
                 {/* Footer / Pagination */}
-                <div className="pagination-footer px-6 py-4 border-t border-surface-border bg-dark-tertiary/20 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="pagination-footer px-6 py-4 border-t border-gray-200 dark:border-surface-border bg-gray-50 dark:bg-dark-tertiary/20 flex flex-col sm:flex-row items-center justify-between gap-4">
                     <p className="text-sm text-gray-500">
-                        Showing <span className="font-medium text-white">{filteredJamaahList.length}</span> of <span className="font-medium text-white">{pagination.total}</span> entries
+                        Showing <span className="font-medium text-gray-900 dark:text-white">{filteredJamaahList.length}</span> of <span className="font-medium text-gray-900 dark:text-white">{pagination.total}</span> entries
                     </p>
                     <div className="flex items-center gap-2">
                         <Button
@@ -623,7 +623,7 @@ const JamaahList = () => {
                             <ChevronLeft className="w-4 h-4" />
                         </Button>
                         <div className="flex items-center gap-1 px-2">
-                            <span className="text-sm font-medium text-white">{currentPage}</span>
+                            <span className="text-sm font-medium text-gray-900 dark:text-white">{currentPage}</span>
                             <span className="text-sm text-gray-500">/</span>
                             <span className="text-sm text-gray-500">{pagination.totalPages || 1}</span>
                         </div>

@@ -28,6 +28,8 @@ import { VendorManagement } from './pages/vendor';
 import { NotificationsPage } from './pages/notifications';
 import { ProfilePage } from './pages/profile';
 
+
+
 export const router = createBrowserRouter([
     {
         path: '/',
@@ -159,6 +161,7 @@ export const router = createBrowserRouter([
                 path: 'profile',
                 element: <ProfilePage />,
             },
+
             // Settings Routes (Owner only)
             {
                 path: 'settings/users',

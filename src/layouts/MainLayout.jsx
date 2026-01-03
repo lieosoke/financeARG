@@ -3,6 +3,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from '../components/organisms/Sidebar';
 import TopNavbar from '../components/organisms/TopNavbar';
 import { useCompanySettings } from '../hooks/useCompanySettings';
+import FloatingChatWidget from '../components/chat/floating/FloatingChatWidget';
 import pkg from '../../package.json';
 
 const MainLayout = () => {
@@ -79,6 +80,9 @@ const MainLayout = () => {
                     </div>
                 </footer>
             </div>
+
+            {/* Pop-up Chat Widget */}
+            <FloatingChatWidget />
         </div>
     );
 };

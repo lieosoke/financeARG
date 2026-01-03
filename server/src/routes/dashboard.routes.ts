@@ -2,13 +2,13 @@ import { Router } from 'express';
 import { dashboardService } from '../services/dashboard.service';
 import { asyncHandler } from '../middleware/error.middleware';
 import { authMiddleware } from '../middleware/auth.middleware';
-import { financeAccess } from '../middleware/rbac.middleware';
+import { dashboardAccess } from '../middleware/rbac.middleware';
 
 const router = Router();
 
-// All dashboard routes require authentication and at least finance role
+// All dashboard routes require authentication and admin/finance/owner role
 router.use(authMiddleware);
-router.use(financeAccess);
+router.use(dashboardAccess);
 
 /**
  * GET /dashboard/overview

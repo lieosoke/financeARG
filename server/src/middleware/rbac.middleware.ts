@@ -61,6 +61,11 @@ export const ownerOnly = requireRole('owner');
 export const financeAccess = requireRole('finance', 'owner');
 
 /**
+ * Shorthand middleware for dashboard access (admin, finance, or owner)
+ */
+export const dashboardAccess = requireRole('admin', 'finance', 'owner');
+
+/**
  * Shorthand middleware for any authenticated user
  */
 export const anyRole = requireRole('admin', 'finance', 'owner');

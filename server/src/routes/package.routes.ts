@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { packageService } from '../services/package.service';
+import { schedulerService } from '../services/scheduler.service';
 import { asyncHandler, ApiError } from '../middleware/error.middleware';
 import { authMiddleware } from '../middleware/auth.middleware';
 import { requireRole } from '../middleware/rbac.middleware';
@@ -49,6 +50,26 @@ const querySchema = z.object({
     type: z.string().optional(),
     search: z.string().optional(),
 });
+
+/**
+ * POST /paket/update-statuses
+ * Manually trigger package status update based on dates
+ * - Packages become 'closed' 7 days before departure
+ * - Packages become 'completed' after return date
+ */
+router.post(
+    '/update-statuses',
+    requireRole('admin', 'owner'),
+    asyncHandler(async (req, res) => {
+        const result = await schedulerService.runManually();
+
+        res.json({
+            success: true,
+            message: `Package statuses updated: ${result.closed} closed, ${result.completed} completed`,
+            data: result,
+        });
+    })
+);
 
 /**
  * GET /paket

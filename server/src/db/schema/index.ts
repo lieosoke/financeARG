@@ -9,3 +9,4 @@ export * from './auditLogs';
 export * from './notifications';
 export * from './companySettings';
 export * from './regions';
+export * from './chat';

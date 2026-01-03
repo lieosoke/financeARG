@@ -202,6 +202,82 @@ class ApiClient {
     async healthCheck() {
         return this.request('/health');
     }
+
+    // Chat endpoints
+    async getConversations() {
+        return this.request('/chat/conversations');
+    }
+
+    async createConversation(otherUserId) {
+        return this.request('/chat/conversations', {
+            method: 'POST',
+            body: JSON.stringify({ otherUserId }),
+        });
+    }
+
+    async getMessages(conversationId, limit = 50) {
+        return this.request(`/chat/conversations/${conversationId}/messages?limit=${limit}`);
+    }
+
+    async sendMessage(conversationId, content) {
+        return this.request('/chat/messages', {
+            method: 'POST',
+            body: JSON.stringify({ conversationId, content }),
+        });
+    }
+
+    async markMessageAsRead(messageId) {
+        return this.request(`/chat/messages/${messageId}/read`, {
+            method: 'PUT',
+        });
+    }
+
+    async getUnreadCount() {
+        return this.request('/chat/unread-count');
+    }
+
+    async getChatUsers() {
+        return this.request('/chat/users');
+    }
+
+    // SSE connection for chat events
+    connectToChatEvents(onMessage, onError) {
+        const url = this.token
+            ? `${this.baseUrl}/chat/events?token=${this.token}`
+            : `${this.baseUrl}/chat/events`;
+        const eventSource = new EventSource(url, { withCredentials: true });
+
+        eventSource.onopen = () => {
+            console.log('Connected to chat events');
+        };
+
+        eventSource.addEventListener('new_message', (event) => {
+            const data = JSON.parse(event.data);
+            onMessage('new_message', data);
+        });
+
+        eventSource.addEventListener('message_sent', (event) => {
+            const data = JSON.parse(event.data);
+            onMessage('message_sent', data);
+        });
+
+        eventSource.addEventListener('new_conversation', (event) => {
+            const data = JSON.parse(event.data);
+            onMessage('new_conversation', data);
+        });
+
+        eventSource.addEventListener('message_read', (event) => {
+            const data = JSON.parse(event.data);
+            onMessage('message_read', data);
+        });
+
+        eventSource.onerror = (error) => {
+            console.error('Chat events error:', error);
+            if (onError) onError(error);
+        };
+
+        return eventSource;
+    }
 }
 
 // Export singleton instance

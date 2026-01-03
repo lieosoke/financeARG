@@ -58,8 +58,8 @@ const Dashboard = () => {
     const CustomTooltip = ({ active, payload, label }) => {
         if (active && payload && payload.length) {
             return (
-                <div className="bg-dark-secondary border border-surface-border rounded-xl p-3 shadow-xl">
-                    <p className="text-white font-medium mb-1">{label}</p>
+                <div className="bg-white dark:bg-dark-secondary border border-gray-200 dark:border-surface-border rounded-xl p-3 shadow-xl">
+                    <p className="text-gray-900 dark:text-white font-medium mb-1">{label}</p>
                     {payload.map((entry, index) => (
                         <p key={index} className="text-sm" style={{ color: entry.color }}>
                             {entry.name}: Rp {entry.value.toFixed(1)}M
@@ -88,7 +88,7 @@ const Dashboard = () => {
             <div className="flex items-center justify-center min-h-[400px]">
                 <Card className="!p-8 max-w-md w-full text-center">
                     <AlertCircle className="w-12 h-12 text-rose-500 mx-auto mb-4" />
-                    <h3 className="text-xl font-bold text-white mb-2">Gagal Memuat Data</h3>
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Gagal Memuat Data</h3>
                     <p className="text-gray-400 mb-6">{overviewErrorObj?.message || 'Terjadi kesalahan saat memuat data dashboard'}</p>
                     <Button onClick={() => refetch()} icon={<RefreshCw className="w-4 h-4" />}>
                         Coba Lagi
@@ -179,7 +179,7 @@ const Dashboard = () => {
                                 </AreaChart>
                             </ResponsiveContainer>
                         ) : (
-                            <div className="h-full flex flex-col items-center justify-center bg-dark-tertiary/20 rounded-xl border border-dashed border-surface-border">
+                            <div className="h-full flex flex-col items-center justify-center bg-gray-50 dark:bg-dark-tertiary/20 rounded-xl border border-dashed border-gray-200 dark:border-surface-border">
                                 <TrendingUp className="w-8 h-8 text-gray-600 mb-2" />
                                 <p className="text-gray-500 text-sm">Belum ada data cashflow</p>
                             </div>
@@ -212,7 +212,7 @@ const Dashboard = () => {
                                 </PieChart>
                             </ResponsiveContainer>
                         ) : (
-                            <div className="h-full flex flex-col items-center justify-center bg-dark-tertiary/20 rounded-xl border border-dashed border-surface-border">
+                            <div className="h-full flex flex-col items-center justify-center bg-gray-50 dark:bg-dark-tertiary/20 rounded-xl border border-dashed border-gray-200 dark:border-surface-border">
                                 <Package className="w-8 h-8 text-gray-600 mb-2" />
                                 <p className="text-gray-500 text-sm">Belum ada data manifest</p>
                             </div>
@@ -228,7 +228,7 @@ const Dashboard = () => {
                 headerAction={
                     <button
                         onClick={() => navigate('/keuangan/cashflow')}
-                        className="text-sm text-primary-400 hover:text-primary-300 font-medium transition-colors"
+                        className="text-sm text-primary-600 dark:text-primary-400 hover:text-primary-500 dark:hover:text-primary-300 font-medium transition-colors"
                     >
                         Lihat Semua
                     </button>
@@ -276,19 +276,19 @@ const Dashboard = () => {
                                             {transaction.type === 'pemasukan' ? 'Pemasukan' : 'Pengeluaran'}
                                         </span>
                                     </Td>
-                                    <Td className="whitespace-nowrap font-medium text-gray-200">
+                                    <Td className="whitespace-nowrap font-medium text-gray-900 dark:text-gray-200">
                                         {transaction.jamaah?.name || transaction.vendor?.name || '-'}
                                     </Td>
                                     <Td className="whitespace-nowrap">
-                                        <span className="px-2 py-0.5 text-xs font-medium bg-surface-glass rounded text-gray-400">
+                                        <span className="px-2 py-0.5 text-xs font-medium bg-gray-100 dark:bg-surface-glass rounded text-gray-600 dark:text-gray-400">
                                             {transaction.package?.code || '-'}
                                         </span>
                                     </Td>
-                                    <Td className="whitespace-nowrap text-gray-400">
+                                    <Td className="whitespace-nowrap text-gray-500 dark:text-gray-400">
                                         {transaction.incomeCategory || transaction.expenseCategory || '-'}
                                     </Td>
                                     <Td align="right" className="whitespace-nowrap font-tabular font-semibold">
-                                        <div className={`flex items-center justify-end gap-1 ${transaction.type === 'pemasukan' ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                        <div className={`flex items-center justify-end gap-1 ${transaction.type === 'pemasukan' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
                                             <span>{transaction.type === 'pemasukan' ? '+' : '-'}</span>
                                             <span>Rp {formatCurrency(Math.abs(parseFloat(transaction.amount) || 0), false)}</span>
                                         </div>
