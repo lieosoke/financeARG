@@ -4,7 +4,7 @@ import { db } from './database';
 import * as schema from '../db/schema';
 
 export const auth = betterAuth({
-    baseURL: process.env.BETTER_AUTH_URL || 'http://localhost:3001', // Explicitly set base URL
+    baseURL: process.env.BETTER_AUTH_URL || 'http://192.168.1.31:3001', // Use IP for local network access
     basePath: '/api/v1/auth',
     database: drizzleAdapter(db, {
         provider: 'pg',
@@ -35,17 +35,25 @@ export const auth = betterAuth({
     },
 
     trustedOrigins: [
+        // Port 80 (no port in URL)
+        'http://localhost',
+        'http://192.168.1.31',
+        'http://127.0.0.1',
+        // Localhost with ports
         'http://localhost:5173',
         'http://localhost:5174',
+        'http://localhost:5175',
+        'http://localhost:5176',
         'http://localhost:3000',
         'http://localhost:3001',
         'http://127.0.0.1:5173',
-        'http://127.0.0.1:5174',
-        'http://127.0.0.1:5174',
-        // Local network access
+        'http://127.0.0.1:3001',
+        // Local network - specific IP with ports
         'http://192.168.1.31:5173',
+        'http://192.168.1.31:5175',
         'http://192.168.1.31:3001',
-        ...(process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',') : ['http://localhost:5173']),
+        // Wildcard local network patterns (add more IPs as needed)
+        ...(process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',') : []),
     ],
 
     // Custom user fields

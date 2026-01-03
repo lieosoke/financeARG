@@ -10,6 +10,8 @@ lerna-debug.log*
 node_modules
 .env
 .env.production
+PRODUCTION_DEPLOY.md    
+START_ARG_APP.bat
 dist
 dist-ssr
 *.local

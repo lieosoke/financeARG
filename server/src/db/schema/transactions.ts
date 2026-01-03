@@ -31,6 +31,7 @@ export const expenseCategoryEnum = pgEnum('expense_category', [
     'operasional_kantor',
     'atk_kantor',
     'keperluan_kantor_lainnya',
+    'ujroh',
     'lainnya',
 ]);
 

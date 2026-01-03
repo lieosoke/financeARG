@@ -11,12 +11,12 @@ import {
     ChevronDown,
     ChevronRight,
     X,
-    Sparkles,
     Building2,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { canAccessMenu, getRoleConfig } from '../../config/permissions';
 import { useCompanySettings } from '../../hooks/useCompanySettings';
+import logo from '../../assets/images/logo.png';
 
 const Sidebar = ({ isOpen, onClose }) => {
     const location = useLocation();
@@ -148,8 +148,8 @@ const Sidebar = ({ isOpen, onClose }) => {
                 {/* Logo Header */}
                 <div className="h-16 flex items-center justify-between px-5 border-b border-surface-border">
                     <Link to="/dashboard" className="flex items-center group">
-                        <div className="w-10 h-10 bg-gradient-to-br from-primary-400 to-primary-600 rounded-xl flex items-center justify-center shadow-glow-emerald-sm group-hover:shadow-glow-emerald transition-shadow duration-300">
-                            <Sparkles className="w-5 h-5 text-white" />
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-glow-emerald-sm group-hover:shadow-glow-emerald transition-shadow duration-300 overflow-hidden">
+                            <img src={logo} alt="Logo" className="w-full h-full object-contain" />
                         </div>
                         <div className="ml-3">
                             <span className="text-lg font-bold text-white font-display">{companyName}</span>

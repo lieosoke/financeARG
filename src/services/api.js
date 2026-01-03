@@ -1,5 +1,6 @@
 // API Configuration
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api/v1';
+const hostname = window.location.hostname;
+const API_BASE_URL = `http://${hostname}:3001/api/v1`;
 
 /**
  * API Client for ARG Finance Backend

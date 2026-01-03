@@ -154,7 +154,7 @@ const ProfilePage = () => {
                                 {user?.name || 'Admin User'}
                             </h3>
                             <p className="text-sm text-gray-400 mb-4">
-                                {user?.email || 'admin@argtour.com'}
+                                {user?.email || 'email@argtravel.id'}
                             </p>
                             <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary-500/20 text-primary-400 rounded-lg border border-primary-500/30">
                                 <Shield className="w-4 h-4" />

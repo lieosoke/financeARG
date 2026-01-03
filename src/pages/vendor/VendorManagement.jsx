@@ -66,6 +66,7 @@ const VendorManagement = () => {
         { value: 'handling', label: 'Handling' },
         { value: 'catering', label: 'Konsumsi' },
         { value: 'manasik', label: 'Manasik' },
+        { value: 'ujroh', label: 'Ujroh' },
         { value: 'other', label: 'Lainnya' },
     ];
 
@@ -79,6 +80,7 @@ const VendorManagement = () => {
             handling: { variant: 'success', label: 'Handling' },
             catering: { variant: 'success', label: 'Konsumsi' },
             manasik: { variant: 'info', label: 'Manasik' },
+            ujroh: { variant: 'warning', label: 'Ujroh' },
             other: { variant: 'neutral', label: 'Lainnya' },
         };
         const t = config[type] || { variant: 'neutral', label: type || 'Lainnya' };
@@ -384,6 +386,7 @@ const VendorFormModal = ({ isOpen, onClose, onSubmit, isLoading, vendor }) => {
                             <option value="handling">Handling</option>
                             <option value="catering">Konsumsi</option>
                             <option value="manasik">Manasik</option>
+                            <option value="ujroh">Ujroh</option>
                             <option value="other">Lainnya</option>
                         </select>
                     </div>

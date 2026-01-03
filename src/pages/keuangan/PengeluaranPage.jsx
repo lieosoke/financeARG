@@ -114,10 +114,7 @@ const PengeluaranPage = () => {
         { value: 'muthawif', label: 'Muthawif' },
         { value: 'konsumsi', label: 'Konsumsi' },
         { value: 'manasik', label: 'Manasik' },
-        { value: 'tour_leader', label: 'Tour Leader' },
-        { value: 'operasional_kantor', label: 'Operasional Kantor' },
-        { value: 'atk_kantor', label: 'ATK Kantor' },
-        { value: 'keperluan_kantor_lainnya', label: 'Keperluan Kantor Lainnya' },
+        { value: 'ujroh', label: 'Ujroh' },
         { value: 'lainnya', label: 'Lainnya' },
     ];
 
@@ -133,10 +130,7 @@ const PengeluaranPage = () => {
             muthawif: { variant: 'success', label: 'Muthawif' },
             konsumsi: { variant: 'success', label: 'Konsumsi' },
             manasik: { variant: 'info', label: 'Manasik' },
-            tour_leader: { variant: 'warning', label: 'Tour Leader' },
-            operasional_kantor: { variant: 'neutral', label: 'Operasional Kantor' },
-            atk_kantor: { variant: 'neutral', label: 'ATK Kantor' },
-            keperluan_kantor_lainnya: { variant: 'neutral', label: 'Keperluan Kantor Lainnya' },
+            ujroh: { variant: 'warning', label: 'Ujroh' },
             lainnya: { variant: 'neutral', label: 'Lainnya' },
         };
         const cat = config[kategori] || { variant: 'neutral', label: kategori || 'Lainnya' };

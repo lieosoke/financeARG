@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar, Building2, Package, FileText, Tag } from 'lucide-react';
+import { Calendar, Building2, Package, FileText, Tag, CreditCard, Image as ImageIcon, Download } from 'lucide-react';
 import Modal from '../molecules/Modal';
 import Button from '../atoms/Button';
 import Badge from '../atoms/Badge';
@@ -24,6 +24,7 @@ const ViewExpenseModal = ({ isOpen, onClose, data }) => {
             operasional_kantor: { variant: 'neutral', label: 'Operasional Kantor' },
             atk_kantor: { variant: 'neutral', label: 'ATK Kantor' },
             keperluan_kantor_lainnya: { variant: 'neutral', label: 'Keperluan Kantor Lainnya' },
+            ujroh: { variant: 'success', label: 'Ujroh' },
             lainnya: { variant: 'neutral', label: 'Lainnya' },
         };
         const cat = config[kategori] || { variant: 'neutral', label: kategori || 'Lainnya' };
@@ -108,6 +109,16 @@ const ViewExpenseModal = ({ isOpen, onClose, data }) => {
                                 <p className="text-white font-medium">{formatDateToID(data.transactionDate)}</p>
                             </div>
                         </div>
+
+                        <div className="flex items-start gap-3">
+                            <div className="p-2 bg-dark-tertiary rounded-lg text-emerald-400">
+                                <CreditCard className="w-5 h-5" />
+                            </div>
+                            <div>
+                                <p className="text-xs text-gray-500">Metode Pembayaran</p>
+                                <p className="text-white font-medium capitalize">{data.paymentMethod === 'cash' ? 'Cash' : 'Transfer' || '-'}</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -117,6 +128,36 @@ const ViewExpenseModal = ({ isOpen, onClose, data }) => {
                         <h4 className="text-sm font-medium text-gray-500 mb-2">Keterangan</h4>
                         <div className="bg-dark-tertiary/50 p-4 rounded-xl text-gray-300 text-sm">
                             {data.description || data.notes}
+                        </div>
+                    </div>
+                )}
+
+                {/* Payment Proof Photo */}
+                {data.receiptUrl && (
+                    <div className="pt-4 border-t border-surface-border">
+                        <h4 className="text-sm font-medium text-gray-500 mb-3">Bukti Pembayaran</h4>
+                        <div className="relative rounded-xl overflow-hidden border border-surface-border bg-dark-tertiary/30">
+                            <img
+                                src={data.receiptUrl}
+                                alt="Bukti Pembayaran"
+                                className="w-full h-auto max-h-96 object-contain"
+                            />
+                            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
+                                <div className="flex items-center justify-between text-white text-sm">
+                                    <div className="flex items-center gap-2">
+                                        <ImageIcon className="w-4 h-4" />
+                                        <span>Bukti Pembayaran</span>
+                                    </div>
+                                    <a
+                                        href={data.receiptUrl}
+                                        download="bukti-pembayaran.jpg"
+                                        className="flex items-center gap-1 px-2 py-1 rounded bg-white/20 hover:bg-white/30 transition-colors"
+                                    >
+                                        <Download className="w-3 h-3" />
+                                        <span className="text-xs">Download</span>
+                                    </a>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 )}

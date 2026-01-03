@@ -52,12 +52,12 @@ const createExpenseSchema = z.object({
         'operasional_kantor',
         'atk_kantor',
         'keperluan_kantor_lainnya',
+        'ujroh',
         'lainnya',
     ]),
     amount: z.string().or(z.number()).transform(String),
     paymentMethod: z
-        .enum(['bank_bca', 'bank_mandiri', 'bank_bni', 'bank_bri', 'bank_syariah', 'cash', 'transfer'])
-        .optional(),
+        .enum(['cash', 'transfer']),
     referenceNumber: z.string().optional(),
     bankName: z.string().optional(),
     description: z.string().optional(),
@@ -262,6 +262,7 @@ const updateTransactionSchema = z.object({
         'operasional_kantor',
         'atk_kantor',
         'keperluan_kantor_lainnya',
+        'ujroh',
         'lainnya',
     ]).optional(),
     amount: z.string().or(z.number()).transform(String).optional(),

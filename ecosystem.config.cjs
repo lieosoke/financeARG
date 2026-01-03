@@ -3,7 +3,8 @@ module.exports = {
         {
             name: 'arg-backend',
             cwd: 'd:/xampp/htdocs/finance-arg/server',
-            script: 'dist/index.js',
+            script: 'node_modules/tsx/dist/cli.mjs',
+            args: 'src/index.ts',
             interpreter: 'node',
             watch: false,
             autorestart: true,

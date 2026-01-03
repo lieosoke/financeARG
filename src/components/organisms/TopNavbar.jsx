@@ -216,7 +216,7 @@ const TopNavbar = ({ onMenuClick, pageTitle }) => {
                                 <div className="dropdown-menu w-56">
                                     <div className="p-4 border-b border-surface-border">
                                         <p className="font-semibold text-white">{user?.name || 'Admin User'}</p>
-                                        <p className="text-sm text-gray-500">{user?.email || 'admin@argtour.com'}</p>
+                                        <p className="text-sm text-gray-500">{user?.email || 'email@argtravel.id'}</p>
                                         <span className="inline-block mt-2 px-2 py-0.5 text-xs font-medium bg-primary-500/20 text-primary-400 rounded-md border border-primary-500/30">
                                             Owner
                                         </span>

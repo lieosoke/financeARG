@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import Input from '../../components/atoms/Input';
 import Button from '../../components/atoms/Button';
-import { Lock, Mail, Sparkles, ArrowRight, AlertCircle } from 'lucide-react';
+import { Lock, Mail, ArrowRight, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCompanySettings } from '../../hooks/useCompanySettings';
+import logo from '../../assets/images/logo.png';
+import pkg from '../../../package.json';
 
 const Login = () => {
     const navigate = useNavigate();
@@ -71,8 +73,8 @@ const Login = () => {
                 <div className="relative z-10 flex flex-col justify-center items-center text-white p-12 w-full">
                     <div className="max-w-md text-center">
                         {/* Logo with Glow */}
-                        <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-primary-400 to-primary-600 rounded-2xl mb-8 shadow-glow-emerald animate-glow-pulse">
-                            <Sparkles className="w-10 h-10 text-white" />
+                        <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl mb-8 shadow-glow-emerald animate-glow-pulse overflow-hidden">
+                            <img src={logo} alt="Logo" className="w-full h-full object-contain" />
                         </div>
 
                         <h1 className="text-5xl font-bold mb-4 font-display">
@@ -107,8 +109,8 @@ const Login = () => {
                 <div className="w-full max-w-md">
                     {/* Logo for mobile */}
                     <div className="lg:hidden mb-8 text-center">
-                        <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-primary-400 to-primary-600 rounded-2xl mb-4 shadow-glow-emerald-sm">
-                            <Sparkles className="w-8 h-8 text-white" />
+                        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4 shadow-glow-emerald-sm overflow-hidden">
+                            <img src={logo} alt="Logo" className="w-full h-full object-contain" />
                         </div>
                         <h2 className="text-2xl font-bold text-white font-display">{companyName}</h2>
                         <p className="text-sm text-gray-500 mt-1">Dashboard Keuangan</p>
@@ -137,7 +139,7 @@ const Login = () => {
                                 label="Email"
                                 type="email"
                                 name="email"
-                                placeholder="admin@argtour.com"
+                                placeholder="email@argtravel.id"
                                 value={formData.email}
                                 onChange={handleChange}
                                 required
@@ -201,9 +203,10 @@ const Login = () => {
                         </div>
                     </div>
 
-                    {/* Footer */}
+                    {/* Footer - Force render check */}
                     <div className="mt-8 text-center text-sm text-gray-600">
-                        <p>&copy; 2025 {companyName}. All rights reserved.</p>
+                        <p>&copy; {new Date().getFullYear()} {companyName}. All rights reserved.</p>
+                        <p className="text-xs mt-1 text-gray-500">v{pkg.version}</p>
                     </div>
                 </div>
             </div>

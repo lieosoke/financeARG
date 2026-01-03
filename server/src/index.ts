@@ -10,39 +10,53 @@ import { toNodeHandler } from 'better-auth/node';
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Trust proxy (for Apache reverse proxy)
+app.set('trust proxy', 1);
+
 // Security middleware
 app.use(helmet());
 
 // CORS configuration
-app.use(
-    cors({
-        origin: (origin, callback) => {
-            // Allow requests with no origin (like mobile apps or curl)
-            if (!origin) return callback(null, true);
+const corsOptions = {
+    origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+        // Allow requests with no origin (like mobile apps or curl)
+        if (!origin) return callback(null, true);
 
-            // Allow all localhost ports
-            if (origin.match(/^http:\/\/localhost:\d+$/)) {
-                return callback(null, true);
-            }
+        // Allow all localhost (with or without port)
+        if (origin.match(/^http:\/\/localhost(:\d+)?$/)) {
+            return callback(null, true);
+        }
 
-            // Allow local network IPs (e.g., 192.168.x.x)
-            if (origin.match(/^http:\/\/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+$/)) {
-                return callback(null, true);
-            }
+        // Allow 127.0.0.1 (with or without port)
+        if (origin.match(/^http:\/\/127\.0\.0\.1(:\d+)?$/)) {
+            return callback(null, true);
+        }
 
-            // Allow configured frontend URL(s)
-            const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:5173').split(',');
-            if (allowedOrigins.includes(origin)) {
-                return callback(null, true);
-            }
+        // Allow local network IPs (with or without port)
+        if (origin.match(/^http:\/\/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(:\d+)?$/)) {
+            return callback(null, true);
+        }
 
-            callback(new Error('Not allowed by CORS'));
-        },
-        credentials: true,
-        methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-        allowedHeaders: ['Content-Type', 'Authorization'],
-    })
-);
+        // Allow configured frontend URL(s)
+        const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:5173').split(',');
+        if (allowedOrigins.includes(origin)) {
+            return callback(null, true);
+        }
+
+        callback(new Error('Not allowed by CORS'));
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+};
+
+// Apply CORS globally EXCEPT for auth routes which handle it themselves
+app.use((req, res, next) => {
+    if (req.path.startsWith('/api/v1/auth')) {
+        return next();
+    }
+    cors(corsOptions)(req, res, next);
+});
 
 // Body parsing
 app.use(express.json({ limit: '10mb' }));
